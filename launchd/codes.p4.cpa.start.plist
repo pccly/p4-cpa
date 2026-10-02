@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>DOCKER_CONTEXT</key>
+		<string>__CONTEXT__</string>
+		<key>HOME</key>
+		<string>__HOME__</string>
+		<key>P4_CPA_RUNTIME</key>
+		<string>__RUNTIME__</string>
+		<key>PATH</key>
+		<string>__PATH__</string>
+	</dict>
+	<key>KeepAlive</key>
+	<dict>
+		<key>SuccessfulExit</key>
+		<false/>
+	</dict>
+	<key>Label</key>
+	<string>codes.p4.cpa.start</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>__REPO__/scripts/start.sh</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>__LOGS__/start.log</string>
+	<key>StandardOutPath</key>
+	<string>__LOGS__/start.log</string>
+	<key>ThrottleInterval</key>
+	<integer>60</integer>
+	<key>Umask</key>
+	<integer>63</integer>
+	<key>WorkingDirectory</key>
+	<string>__REPO__</string>
+</dict>
+</plist>

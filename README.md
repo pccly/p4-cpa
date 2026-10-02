@@ -7,6 +7,9 @@ Docker builds our own `p4-cpa/cpa:local` and `p4-cpa/manager:local` images.
 CPA handles model traffic; CPAMP
 provides the management UI and persistent usage history.
 
+For the always-on Mac mini setup, private HTTPS, backups, upgrades, and manual
+Studio failover, see [Hosting and operations](docs/hosting.md).
+
 ## Quick start
 
 Requires Docker with Compose v2+ (Docker Desktop or OrbStack on macOS), Bash,

@@ -1,0 +1,25 @@
+config-version: 8
+server:
+  host: "0.0.0.0"
+  port: 8317
+management:
+  # CPAMP reaches CPA over the private Compose bridge.
+  allow-remote: true
+  secret-key: "__CPA_MANAGEMENT_KEY__"
+  disable-control-panel: true
+access:
+  api-keys:
+    - "__CPA_CLIENT_KEY__"
+oauth:
+  auth-dir: "/root/.cli-proxy-api"
+observability:
+  logs:
+    logging-to-file: true
+    logs-max-total-size-mb: 100
+    request-log: false
+  usage:
+    usage-statistics-enabled: true
+    redis-usage-queue-retention-seconds: 60
+plugins:
+  enabled: false
+  dir: "/CLIProxyAPI/plugins"

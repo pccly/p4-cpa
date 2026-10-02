@@ -1,0 +1,11 @@
+/.env
+/.env.*
+!/.env.example
+/config.yaml
+/auths/
+/data/
+/logs/
+/plugins/
+/.artifacts/
+/backups/
+.DS_Store

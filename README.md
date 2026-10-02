@@ -9,6 +9,8 @@ provides the management UI and persistent usage history.
 
 For the always-on Mac mini setup, private HTTPS, backups, upgrades, and manual
 Studio failover, see [Hosting and operations](docs/hosting.md).
+For `https://cpa.home.ccly.dev`, use the optional
+[custom hostname profile](docs/hosting.md#custom-hostname-with-private-https).
 
 ## Quick start
 

@@ -1,0 +1,21 @@
+{
+	auto_https disable_redirects
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+}
+
+{$HTTPS_HOST} {
+	tls {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+		resolvers 1.1.1.1 1.0.0.1
+	}
+
+	@inference path /v1/* /v1beta/*
+	handle @inference {
+		reverse_proxy cli-proxy-api:8317 {
+			flush_interval -1
+		}
+	}
+	handle {
+		reverse_proxy cpa-manager-plus:18317
+	}
+}

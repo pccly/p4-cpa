@@ -75,6 +75,35 @@ services:
       driver: json-file
       options: {max-size: "10m", max-file: "3"}
 
+  https:
+    profiles: [https]
+    image: p4-cpa/https:local
+    build: ./https
+    restart: unless-stopped
+    depends_on:
+      cpa-manager-plus:
+        condition: service_healthy
+    ports:
+      - "${HTTPS_BIND_IP:-127.0.0.1}:${HTTPS_PORT:-19443}:443"
+    environment:
+      HTTPS_HOST: ${HTTPS_HOST:-cpa.home.ccly.dev}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
+    volumes:
+      - ./https/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Included in the existing cold backup alongside the manager data.
+      - ./data/caddy:/data
+      - ./data/caddy-config:/config
+    healthcheck:
+      test: [CMD, wget, -qO, /dev/null, "http://127.0.0.1:2019/config/"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
+    networks: [cpa]
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
 networks:
   cpa:
     driver: bridge

@@ -129,6 +129,83 @@ and recreate containers. That uses the application's HTTP port over the encrypte
 Tailscale connection, without Serve HTTPS. Keep loopback binding for the recommended
 Serve setup; do not use `0.0.0.0`. Callback binding remains loopback in either case.
 
+## Custom hostname with private HTTPS
+
+The optional `https` profile builds our Caddy image with the Cloudflare DNS module.
+It obtains and renews a publicly trusted Let's Encrypt certificate using DNS-01:
+only outbound HTTPS and temporary DNS TXT records are needed. No inbound public
+ports, router forwarding, Cloudflare proxy, or Funnel are involved. Certificate
+Transparency publicly records the hostname, even though the service is private.
+See the [Cloudflare module](https://github.com/caddy-dns/cloudflare) and
+[Tailscale TCP forwarding](https://tailscale.com/docs/reference/tailscale-cli/serve#use-a-tcp-forwarder).
+
+Create a **DNS-only** Cloudflare A record `cpa.home.ccly.dev` pointing to the mini's
+tailnet IPv4 (`100.92.118.42` for this deployment). An existing wildcard resolving
+to that address also works. Do not publish an unrelated AAAA record. If a local
+resolver overrides `*.home.ccly.dev` to a LAN address, add an exact-name override
+for `cpa.home.ccly.dev` to the tailnet address; preserve other home services.
+
+Use an existing Cloudflare API token with **Zone / Zone / Read** and
+**Zone / DNS / Edit**, restricted to the `ccly.dev` zone. Store it only in the
+mini's ignored `.env`, never in shell arguments, committed files, or logs. Add
+these entries to existing installations; new `init.sh` runs copy them from
+`.env.example`:
+
+```dotenv
+COMPOSE_PROFILES=https
+HTTPS_HOST=cpa.home.ccly.dev
+HTTPS_BIND_IP=127.0.0.1
+HTTPS_PORT=19443
+CLOUDFLARE_API_TOKEN=<existing scoped token>
+```
+
+Keep `.env` mode 0600. Leave `BIND_IP` and callback bindings at loopback. Build and
+start the optional service before changing the working Tailscale route:
+
+```sh
+docker compose build https
+docker compose up -d --wait https
+curl --resolve cpa.home.ccly.dev:19443:127.0.0.1 \
+  https://cpa.home.ccly.dev:19443/management.html -o /dev/null -w '%{http_code}\n'
+```
+
+Wait for certificate issuance before the curl check succeeds. The container health
+check only tests Caddy's local admin API; it does not prove certificate issuance.
+Caddy's admin API stays inside its container. Caddy persists certificates and ACME
+state in `data/caddy` and `data/caddy-config`, covered by the existing cold backup.
+It renews automatically while running with valid DNS credentials. Existing startup
+and upgrade scripts honor `COMPOSE_PROFILES=https` in `.env`.
+
+On this mini, Nginx Proxy Manager already owns host port 443. Publish Caddy only on
+loopback 19443 and use **raw TCP Serve** for tailnet port 443. This preserves the
+custom certificate end to end and does not modify Nginx Proxy Manager. The old
+ts.net manager HTTPS mapping conflicts with raw TCP on 443, so move it to unused
+8444 first; keep the existing inference mapping on 8443:
+
+```sh
+tailscale serve status
+tailscale serve --bg --https=8444 http://127.0.0.1:18317
+tailscale serve --https=443 off
+tailscale serve --bg --tcp=443 tcp://127.0.0.1:19443
+```
+
+The macOS app's CLI is `/Applications/Tailscale.app/Contents/MacOS/Tailscale` if
+`tailscale` is absent from PATH. Only replace the p4-cpa mapping, never use `reset`.
+Verify 8444 works before replacing 443. Roll back with `tailscale serve --tcp=443
+off`, then restore `tailscale serve --bg --https=443 http://127.0.0.1:18317`.
+The optional proxy can remain running privately during rollback.
+
+Use `https://cpa.home.ccly.dev/management.html` for the manager and
+`https://cpa.home.ccly.dev/v1` for clients. `/v1/*` and `/v1beta/*` go to CPA with
+streaming enabled; other paths go to the manager. Application keys remain required.
+Verify the manager returns 200 and unauthenticated `/v1/models` returns 401, and
+inspect the certificate issuer/expiry. Tailnet grants/ACLs still control access.
+
+For hosts without Serve, `HTTPS_BIND_IP` may be a locally bindable tailnet address
+and `HTTPS_PORT=443`, only if that port is free. Never set it to `0.0.0.0` or a LAN
+address when tailnet-only reachability is required. On macOS, prefer the loopback
+plus Serve setup because the Tailscale app owns its virtual address.
+
 ## Headless OAuth
 
 Open OAuth Login in the manager over Tailscale. The provider's callback `localhost`

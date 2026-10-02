@@ -80,7 +80,8 @@ explicit release tag or branch; it never syncs both projects implicitly:
 
 The helper uses `git subtree pull` with full history and requires a clean worktree.
 Review changes and resolve any merge conflicts normally. Update build version
-arguments in `docker-compose.yml` when advancing upstream, back up persistent
+arguments in `docker-compose.yml` when advancing upstream. `CPA_BUILD_DATE` can
+override the default imported source timestamp in build metadata. Back up persistent
 data, rebuild, and run `./scripts/verify.sh`. CPA v8 no longer provides legacy RESP
 output, so this stack explicitly uses CPAMP's HTTP usage collector.
 

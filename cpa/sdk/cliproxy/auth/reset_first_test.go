@@ -110,20 +110,27 @@ func TestResetFirstSelectorUnknownAndEqualResetFallback(t *testing.T) {
 }
 
 func TestResetFirstSelectorSharesWithUnobservedAccounts(t *testing.T) {
-	selector := &ResetFirstSelector{}
 	now := time.Now().Add(-time.Second)
 	reset := func(d time.Duration) map[string]string {
 		return map[string]string{"anthropic-ratelimit-unified-7d-reset": strconv.FormatInt(now.Add(d).Unix(), 10)}
 	}
 	auths := []*Auth{
-		resetFirstAuth("a", "claude", now, reset(time.Hour)),
-		resetFirstAuth("b", "claude", now, map[string]string{}),
-		resetFirstAuth("c", "claude", now, reset(2*time.Hour)),
+		resetFirstAuth("b", "claude", now, reset(time.Hour)),
+		resetFirstAuth("a", "claude", now, map[string]string{}),
+		resetFirstAuth("d", "claude", now, reset(2*time.Hour)),
+		resetFirstAuth("c", "claude", now, map[string]string{}),
 	}
-	for _, want := range []string{"a", "b", "a", "b"} {
-		got, err := selector.Pick(context.Background(), "claude", "", cliproxyexecutor.Options{}, auths)
-		if err != nil || got.ID != want {
-			t.Fatalf("pick=%v, %v; want %s", got, err, want)
+	contexts := map[string]context.Context{
+		"plain":        context.Background(),
+		"prevalidated": context.WithValue(context.Background(), prevalidatedAuthCandidatesKey{}, true),
+	}
+	for name, ctx := range contexts {
+		selector := &ResetFirstSelector{}
+		for _, want := range []string{"a", "b", "c", "a"} {
+			got, err := selector.Pick(ctx, "claude", "", cliproxyexecutor.Options{}, auths)
+			if err != nil || got.ID != want {
+				t.Fatalf("%s pick=%v, %v; want %s", name, got, err, want)
+			}
 		}
 	}
 }

@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -43,6 +44,8 @@ func (s *ResetFirstSelector) Pick(ctx context.Context, provider, model string, o
 		}
 	}
 	candidates = append(candidates, unknown...)
+	// Round robin expects ID order, which prevalidated candidates do not guarantee.
+	sort.Slice(candidates, func(i, j int) bool { return candidates[i].ID < candidates[j].ID })
 	return s.fallback.Pick(ctx, provider, model, opts, candidates)
 }
 

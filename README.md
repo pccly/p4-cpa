@@ -73,10 +73,10 @@ responses, so accounts without an observed reset share new sessions with the
 earliest-reset accounts until their reset is known; the selector does not probe
 accounts or invent reset dates.
 
-Codex OAuth credentials default to WebSocket transport when the client connects
-over WebSockets. Explicit `websockets: false` on an auth file preserves HTTP;
-API-key credentials still require `websockets: true`. HTTP clients continue using
-HTTP, and the existing HTTP fallback handles unsupported WebSocket upgrades.
+Codex credentials use HTTP upstream transport by default. Set `websockets: true`
+on an auth file (or enable WebSockets for it in the manager) to opt in; the legacy
+`websocket` key is also honored. HTTP clients continue using HTTP, and the existing
+HTTP fallback handles unsupported WebSocket upgrades.
 
 Existing `config.yaml` files are preserved by initialization. To opt in, use the
 manager's visual configuration editor or merge these fields into your routing

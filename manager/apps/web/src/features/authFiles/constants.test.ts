@@ -111,9 +111,11 @@ describe('authFiles constants - meta', () => {
   });
 });
 
-describe('Codex OAuth websocket defaults', () => {
-  it('defaults Codex files to websockets and honors explicit opt outs', () => {
-    expect(readAuthFileWebsockets({ type: 'codex' })).toBe(true);
+describe('Codex websocket defaults', () => {
+  it('defaults Codex files to HTTP and honors explicit settings', () => {
+    expect(readAuthFileWebsockets({ type: 'codex' })).toBe(false);
+    expect(readAuthFileWebsockets({ type: 'codex', websockets: true })).toBe(true);
+    expect(readAuthFileWebsockets({ type: 'codex', websocket: true })).toBe(true);
     expect(readAuthFileWebsockets({ type: 'codex', websockets: false })).toBe(false);
     expect(readAuthFileWebsockets({ type: 'codex', websockets: 'false' })).toBe(false);
     expect(readAuthFileWebsockets({ type: 'codex', websocket: false })).toBe(false);

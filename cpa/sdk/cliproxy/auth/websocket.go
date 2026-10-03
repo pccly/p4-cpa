@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// WebsocketsEnabled honors explicit transport settings and defaults Codex OAuth to WebSockets.
+// WebsocketsEnabled reports explicit transport settings; credentials default to HTTP.
 func (auth *Auth) WebsocketsEnabled() bool {
 	if auth == nil {
 		return false
@@ -23,7 +23,7 @@ func (auth *Auth) WebsocketsEnabled() bool {
 		raw, ok = auth.Metadata["websocket"]
 	}
 	if !ok || raw == nil {
-		return strings.EqualFold(auth.Provider, "codex") && auth.AuthKind() == AuthKindOAuth
+		return false
 	}
 	switch v := raw.(type) {
 	case bool:

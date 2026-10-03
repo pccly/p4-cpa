@@ -2,14 +2,16 @@ package auth
 
 import "testing"
 
-func TestWebsocketsEnabledOAuthDefaultAndOptOut(t *testing.T) {
+func TestWebsocketsEnabledDefaultsOffAndHonorsSettings(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		auth *Auth
 		want bool
 	}{
 		{"nil", nil, false},
-		{"OAuth default", &Auth{Provider: "codex", Metadata: map[string]any{"access_token": "test"}}, true},
+		{"OAuth default", &Auth{Provider: "codex", Metadata: map[string]any{"access_token": "test"}}, false},
+		{"OAuth opt in", &Auth{Provider: "codex", Metadata: map[string]any{"access_token": "test", "websockets": true}}, true},
+		{"legacy opt in", &Auth{Provider: "codex", Metadata: map[string]any{"access_token": "test", "websocket": true}}, true},
 		{"explicit false", &Auth{Provider: "codex", Metadata: map[string]any{"access_token": "test", "websockets": false}}, false},
 		{"legacy opt out", &Auth{Provider: "codex", Metadata: map[string]any{"access_token": "test", "websocket": false}}, false},
 		{"string false", &Auth{Provider: "codex", Metadata: map[string]any{"access_token": "test", "websockets": "false"}}, false},

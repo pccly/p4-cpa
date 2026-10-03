@@ -663,7 +663,9 @@ func selectorContextForAvailableAuths(ctx context.Context, selector Selector, ro
 	ctx = withWeightedSelectorStateModel(ctx, selector, routeModel)
 	if !isBuiltInSelector(selector) {
 		if _, sessionAffinity := selector.(*SessionAffinitySelector); !sessionAffinity {
-			return ctx
+			if _, resetFirst := selector.(*ResetFirstSelector); !resetFirst {
+				return ctx
+			}
 		}
 	}
 	if ctx == nil {

@@ -1109,7 +1109,11 @@ export function VisualConfigEditor({
                 <FieldShell
                   label={t('config_management.visual.sections.network.routing_strategy')}
                   labelId={routingStrategyLabelId}
-                  hint={t('config_management.visual.sections.network.routing_strategy_hint')}
+                  hint={t(
+                    values.routingStrategy === 'reset-first'
+                      ? 'config_management.visual.sections.network.strategy_reset_first_hint'
+                      : 'config_management.visual.sections.network.routing_strategy_hint'
+                  )}
                   hintId={routingStrategyHintId}
                 >
                   <Select
@@ -1124,6 +1128,10 @@ export function VisualConfigEditor({
                         label: t(
                           'config_management.visual.sections.network.strategy_weighted_round_robin'
                         ),
+                      },
+                      {
+                        value: 'reset-first',
+                        label: t('config_management.visual.sections.network.strategy_reset_first'),
                       },
                       {
                         value: 'fill-first',

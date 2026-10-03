@@ -20,6 +20,11 @@ observability:
   usage:
     usage-statistics-enabled: true
     redis-usage-queue-retention-seconds: 60
+routing:
+  strategy: reset-first
+  session-affinity: true
+  session-affinity-ttl: "1h"
+  session-affinity-subagents: true
 plugins:
   enabled: false
   dir: "/CLIProxyAPI/plugins"

@@ -7,6 +7,8 @@ describe('normalizeRoutingStrategy', () => {
     expect(normalizeRoutingStrategy('wrr')).toBe('weighted-round-robin');
     expect(normalizeRoutingStrategy('weightedroundrobin')).toBe('weighted-round-robin');
     expect(normalizeRoutingStrategy('ff')).toBe('fill-first');
+    expect(normalizeRoutingStrategy('reset-first')).toBe('reset-first');
+    expect(normalizeRoutingStrategy('rf')).toBe('reset-first');
   });
 
   it('leaves unknown strategies unclassified', () => {

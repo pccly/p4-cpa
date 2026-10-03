@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AuthFileType } from '@/types';
 import { isMetaFile } from '@/utils/quota/validators';
 import {
+  readAuthFileWebsockets,
   getAuthFileIcon,
   getTypeColor,
   getTypeLabel,
@@ -107,5 +108,17 @@ describe('authFiles constants - meta', () => {
     expect(isQuotaRefreshSupportedProvider('qwen')).toBe(false);
     expect(isQuotaRefreshSupportedProvider('iflow')).toBe(false);
     expect(isQuotaRefreshSupportedProvider('')).toBe(false);
+  });
+});
+
+describe('Codex OAuth websocket defaults', () => {
+  it('defaults Codex files to websockets and honors explicit opt outs', () => {
+    expect(readAuthFileWebsockets({ type: 'codex' })).toBe(true);
+    expect(readAuthFileWebsockets({ type: 'codex', websockets: false })).toBe(false);
+    expect(readAuthFileWebsockets({ type: 'codex', websockets: 'false' })).toBe(false);
+    expect(readAuthFileWebsockets({ type: 'codex', websocket: false })).toBe(false);
+    expect(readAuthFileWebsockets({ type: 'xai' })).toBe(false);
+    expect(readAuthFileWebsockets({ type: 'codex', api_key: 'fixture' })).toBe(false);
+    expect(readAuthFileWebsockets({ type: 'codex', auth_kind: 'apikey' })).toBe(false);
   });
 });

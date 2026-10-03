@@ -973,10 +973,11 @@
     "ws_auth_enable": "啟用 /ws/* 驗證",
     "routing_title": "路由策略",
     "routing_strategy_label": "路由策略:",
-    "routing_strategy_hint": "round-robin 為等量輪詢；weighted-round-robin 在優先級篩選後依憑證權重分配；fill-first 為優先填充。",
+    "routing_strategy_hint": "round-robin 為等量輪詢；weighted-round-robin 在優先級篩選後依憑證權重分配；fill-first 為優先填充。 最早重置將新會話分配給已觀測到的週配額最早重置且可用的帳號。啟用會話親和性後，已有會話保留原帳號。缺少重置資料時回退為輪詢。",
     "routing_strategy_update": "更新",
     "routing_strategy_round_robin": "round-robin（輪詢）",
     "routing_strategy_weighted_round_robin": "weighted-round-robin（加權輪詢）",
+    "routing_strategy_reset_first": "reset-first（最早週配額重置）",
     "routing_strategy_fill_first": "fill-first（優先填充）"
   },
   "api_keys": {
@@ -4241,6 +4242,8 @@
           "routing_strategy_hint": "先依優先級篩選，再由加權輪詢按憑證權重分配請求；未設定權重時預設為 1，非正數只會在此模式下排除該憑證。",
           "strategy_round_robin": "輪詢（Round Robin）",
           "strategy_weighted_round_robin": "加權輪詢（Weighted Round Robin）",
+          "strategy_reset_first_hint": "優先級優先。新會話優先使用已觀測到的週配額最早重置的帳號；未知日期回退為輪詢。會話親和性使已有會話保留原帳號。",
+          "strategy_reset_first": "最早重置",
           "strategy_fill_first": "填充優先（Fill First）",
           "session_affinity_ttl": "會話黏性 TTL",
           "force_model_prefix": "強制模型前綴",

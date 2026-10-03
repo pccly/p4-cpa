@@ -63,6 +63,39 @@ both `.env` and the corresponding `config.yaml` setting, then recreate container
 CPA hashes its management key in `config.yaml` on startup; `.env` keeps the original.
 Editing `CPA_CLIENT_KEY` in `.env` alone does not update CPA's active key.
 
+### Routing and transport
+
+New installations use `routing.strategy: reset-first` with session affinity enabled
+for one hour of inactivity. New sessions prefer the available account with the
+soonest observed weekly reset; existing sessions keep their account until it becomes
+unavailable. Explicit credential priorities still take precedence. Equal reset times,
+or a pool without usable reset observations, fall back to round robin. Five-hour
+windows never determine reset priority. Reset observations come from upstream
+responses, so accounts without an observed reset share new sessions with the
+earliest-reset accounts until their reset is known; the selector does not probe
+accounts or invent reset dates.
+
+Codex OAuth credentials default to WebSocket transport when the client connects
+over WebSockets. Explicit `websockets: false` on an auth file preserves HTTP;
+API-key credentials still require `websockets: true`. HTTP clients continue using
+HTTP, and the existing HTTP fallback handles unsupported WebSocket upgrades.
+
+Existing `config.yaml` files are preserved by initialization. To opt in, use the
+manager's visual configuration editor or merge these fields into your routing
+section, then save:
+
+```yaml
+routing:
+  strategy: reset-first
+  session-affinity: true
+  session-affinity-ttl: "1h"
+  session-affinity-subagents: true
+```
+
+Use the manager's usage analytics to compare cache reads and writes after enabling
+affinity. Hosting, authentication, and backup procedures are in
+[Hosting and operations](docs/hosting.md).
+
 ## Modify and sync source
 
 - `cpa/`: CLIProxyAPI, initially `v8.0.11`; builds with its own `Dockerfile`.

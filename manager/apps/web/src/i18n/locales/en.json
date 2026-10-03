@@ -975,10 +975,11 @@
     "ws_auth_enable": "Require auth for /ws/*",
     "routing_title": "Routing Strategy",
     "routing_strategy_label": "Routing strategy:",
-    "routing_strategy_hint": "round-robin cycles evenly; weighted-round-robin uses credential weights after priority; fill-first prioritizes the first available key.",
+    "routing_strategy_hint": "round-robin cycles evenly; weighted-round-robin uses credential weights after priority; fill-first prioritizes the first available key. Reset first assigns new sessions to the available account with the soonest observed weekly reset. Existing sessions stay on their account when session affinity is enabled. Missing reset data falls back to round robin.",
     "routing_strategy_update": "Update",
     "routing_strategy_round_robin": "round-robin (cycle)",
     "routing_strategy_weighted_round_robin": "weighted-round-robin (weighted cycle)",
+    "routing_strategy_reset_first": "reset-first (soonest weekly reset)",
     "routing_strategy_fill_first": "fill-first (prioritize)"
   },
   "api_keys": {
@@ -4246,6 +4247,8 @@
           "routing_strategy_hint": "Priority is applied first. Weighted round robin then distributes requests by each credential weight; omitted weight defaults to 1 and non-positive weight excludes that credential only in this mode.",
           "strategy_round_robin": "Round Robin",
           "strategy_weighted_round_robin": "Weighted Round Robin",
+          "strategy_reset_first_hint": "Priority applies first. New sessions prefer the soonest observed weekly reset; unknown dates use round robin. Session affinity keeps existing sessions on their account.",
+          "strategy_reset_first": "Reset First",
           "strategy_fill_first": "Fill First",
           "session_affinity_ttl": "Session Affinity TTL",
           "force_model_prefix": "Force Model Prefix",

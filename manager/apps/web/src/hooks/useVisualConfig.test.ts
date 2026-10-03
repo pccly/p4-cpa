@@ -42,6 +42,34 @@ const mountUseVisualConfig = (): UseVisualConfigHarness => {
 };
 
 describe('useVisualConfig', () => {
+  it('preserves reset-first when changing another setting and round-trips routing edits', () => {
+    const harness = mountUseVisualConfig();
+    const yaml = 'config-version: 8\nrouting: {strategy: reset-first, session-affinity: true}\n';
+    act(() => {
+      harness.getCurrent().loadVisualValuesFromYaml(yaml);
+    });
+    expect(harness.getCurrent().visualValues.routingStrategy).toBe('reset-first');
+    act(() => {
+      harness.getCurrent().setVisualValues({ debug: true });
+    });
+    expect(parseYaml(harness.getCurrent().applyVisualChangesToYaml(yaml)).routing.strategy).toBe(
+      'reset-first'
+    );
+    act(() => {
+      harness.getCurrent().setVisualValues({ routingStrategy: 'fill-first' });
+    });
+    expect(parseYaml(harness.getCurrent().applyVisualChangesToYaml(yaml)).routing.strategy).toBe(
+      'fill-first'
+    );
+    act(() => {
+      harness.getCurrent().setVisualValues({ routingStrategy: 'reset-first' });
+    });
+    expect(parseYaml(harness.getCurrent().applyVisualChangesToYaml(yaml)).routing.strategy).toBe(
+      'reset-first'
+    );
+    harness.unmount();
+  });
+
   it('loads v8 client API keys separately from upstream provider credentials', () => {
     const harness = mountUseVisualConfig();
     const yaml = [

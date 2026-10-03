@@ -269,7 +269,10 @@ export const supportsAuthFileWebsockets = (providerKey: string): boolean =>
   AUTH_FILE_WEBSOCKET_PROVIDERS.has(normalizeProviderKey(providerKey));
 
 export const readAuthFileWebsockets = (value: Record<string, unknown>): boolean =>
-  parseDisableCoolingValue(value.websockets ?? value.websocket) ?? false;
+  parseDisableCoolingValue(value.websockets ?? value.websocket) ??
+  (normalizeProviderKey(String(value.type ?? value.provider ?? '')) === 'codex' &&
+    !value.api_key &&
+    !['apikey', 'api_key', 'api-key'].includes(String(value.auth_kind ?? '').trim().toLowerCase()));
 
 export const applyAuthFileWebsockets = (
   value: Record<string, unknown>,

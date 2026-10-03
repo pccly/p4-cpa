@@ -1,19 +1,21 @@
 import { defineConfig, type DefaultTheme } from 'vitepress';
 
 const zhNav: DefaultTheme.NavItem[] = [
+  { text: 'P4 CPA 部署指南', link: 'https://github.com/pccly/p4-cpa/blob/main/docs/hosting.md' },
   { text: '首页', link: '/' },
   { text: '选择面板', link: '/guide/choosing-a-panel' },
   { text: '轻量面板', link: '/deployment/cpa-panel' },
   { text: '快速开始', link: '/guide/getting-started' },
-  { text: '在线演示', link: 'https://seakee.github.io/CPA-Manager-Plus/' },
+  { text: '上游演示', link: 'https://seakee.github.io/CPA-Manager-Plus/' },
 ];
 
 const enNav: DefaultTheme.NavItem[] = [
+  { text: 'P4 CPA operations', link: 'https://github.com/pccly/p4-cpa/blob/main/docs/hosting.md' },
   { text: 'Home', link: '/en/' },
   { text: 'Choose A Panel', link: '/en/guide/choosing-a-panel' },
   { text: 'Lightweight Panel', link: '/en/deployment/cpa-panel' },
   { text: 'Get Started', link: '/en/guide/getting-started' },
-  { text: 'Live Demo', link: 'https://seakee.github.io/CPA-Manager-Plus/' },
+  { text: 'Upstream Demo', link: 'https://seakee.github.io/CPA-Manager-Plus/' },
 ];
 
 const zhSidebar: DefaultTheme.Sidebar = [
@@ -188,7 +190,7 @@ const enSearchTranslations = {
   },
 };
 
-const editLinkPattern = 'https://github.com/seakee/CPA-Manager-Plus/edit/main/apps/docs/:path';
+const editLinkPattern = 'https://github.com/pccly/p4-cpa/edit/main/manager/apps/docs/:path';
 
 const commonThemeConfig: DefaultTheme.Config = {
   search: {
@@ -204,7 +206,7 @@ const commonThemeConfig: DefaultTheme.Config = {
       },
     },
   },
-  socialLinks: [{ icon: 'github', link: 'https://github.com/seakee/CPA-Manager-Plus' }],
+  socialLinks: [{ icon: 'github', link: 'https://github.com/pccly/p4-cpa' }],
   footer: {
     message: 'Released under the MIT License.',
     copyright: 'Copyright 2026 Seakee.',
@@ -212,7 +214,7 @@ const commonThemeConfig: DefaultTheme.Config = {
 };
 
 export default defineConfig({
-  title: 'CPA Manager Plus Docs',
+  title: 'P4 CLI Proxy API upstream reference',
   description:
     'CPA and CLIProxyAPI management panel documentation for request monitoring, usage analytics, cost, quota, account health, plugins, deployment, and operations.',
   base: '/CPA-Manager-Plus/docs/',
@@ -222,7 +224,7 @@ export default defineConfig({
   },
   transformPageData(pageData) {
     const isEnglish = pageData.relativePath.startsWith('en/');
-    const siteTitle = 'CPA Manager Plus';
+    const siteTitle = 'P4 CLI Proxy API upstream reference';
     const title = pageData.title ? `${pageData.title} | ${siteTitle}` : siteTitle;
     const description =
       pageData.description ||
@@ -249,7 +251,7 @@ export default defineConfig({
     root: {
       label: '简体中文',
       lang: 'zh-CN',
-      title: 'CPA Manager Plus',
+      title: 'P4 CLI Proxy API upstream reference',
       description:
         'CPA / CLIProxyAPI 管理面板使用文档：网关配置、请求监控、成本分析、配额、账号健康、插件、部署与运维。',
       themeConfig: {
@@ -281,7 +283,7 @@ export default defineConfig({
       label: 'English',
       lang: 'en-US',
       link: '/en/',
-      title: 'CPA Manager Plus',
+      title: 'P4 CLI Proxy API upstream reference',
       description:
         'CPA / CLIProxyAPI management panel docs for gateway configuration, request monitoring, cost analytics, quota, account health, plugins, deployment, and operations.',
       themeConfig: {

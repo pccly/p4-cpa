@@ -72,7 +72,7 @@ describe('demo persist isolation', () => {
       apiBase: 'http://demo.local',
       managementKey: 'demo-management-key',
       rememberPassword: false,
-      serverVersion: 'v7.1.18-demo',
+      serverVersion: '1.0.0',
       serverCommit: 'demo-commit',
       serverBuildDate: '2026-06-30',
       sessionMode: 'manager_embedded',

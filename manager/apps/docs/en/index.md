@@ -27,6 +27,11 @@ features:
     details: Find failed requests and analyze tokens, cost, latency, and callers.
 ---
 
+::: info P4 CPA
+This bundled manual describes upstream CPA Manager Plus. For P4 CPA installation, private access, backups, and upgrades, follow the [P4 CPA operations guide](https://github.com/pccly/p4-cpa/blob/main/docs/hosting.md). Upstream installers and images do not include this fork.
+:::
+
+
 <script setup>
 import homePreview from '../images/home.png';
 </script>

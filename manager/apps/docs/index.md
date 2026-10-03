@@ -27,6 +27,11 @@ features:
     details: 定位失败请求，分析 Token、成本、延迟和调用方。
 ---
 
+::: info P4 CPA
+此手册保留上游 CPA Manager Plus 的行为说明。P4 CPA 的安装、私有访问、备份与升级请遵循 [P4 CPA 运维指南](https://github.com/pccly/p4-cpa/blob/main/docs/hosting.md)。上游安装脚本与镜像不包含此分支定制。
+:::
+
+
 <script setup>
 import homePreview from './images/home-zh.png';
 </script>

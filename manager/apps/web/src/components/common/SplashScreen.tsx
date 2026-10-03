@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import {
-  CPAMP_VERTICAL_LOGO_ON_DARK_URL,
-  CPAMP_VERTICAL_LOGO_ON_DARK_SRC_SET,
-  CPAMP_VERTICAL_LOGO_SRC_SET,
-  CPAMP_VERTICAL_LOGO_URL,
+  P4CPA_VERTICAL_LOGO_ON_DARK_URL,
+  P4CPA_VERTICAL_LOGO_ON_DARK_SRC_SET,
+  P4CPA_VERTICAL_LOGO_SRC_SET,
+  P4CPA_VERTICAL_LOGO_URL,
 } from '@/assets/brand';
 import './SplashScreen.scss';
 
@@ -30,15 +30,15 @@ export function SplashScreen({ onFinish, fadeOut = false }: SplashScreenProps) {
     <div className={`splash-screen ${fadeOut ? 'fade-out' : ''}`}>
       <div className="splash-content">
         <img
-          src={CPAMP_VERTICAL_LOGO_URL}
-          srcSet={CPAMP_VERTICAL_LOGO_SRC_SET}
-          alt="CPA Manager Plus"
+          src={P4CPA_VERTICAL_LOGO_URL}
+          srcSet={P4CPA_VERTICAL_LOGO_SRC_SET}
+          alt="P4 CPA"
           className="splash-logo splash-logo-light"
         />
         <img
-          src={CPAMP_VERTICAL_LOGO_ON_DARK_URL}
-          srcSet={CPAMP_VERTICAL_LOGO_ON_DARK_SRC_SET}
-          alt="CPA Manager Plus"
+          src={P4CPA_VERTICAL_LOGO_ON_DARK_URL}
+          srcSet={P4CPA_VERTICAL_LOGO_ON_DARK_SRC_SET}
+          alt="P4 CPA"
           className="splash-logo splash-logo-dark"
         />
         <div className="splash-loader">

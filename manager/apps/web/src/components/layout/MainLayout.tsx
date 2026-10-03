@@ -28,9 +28,10 @@ import {
   IconSidebarUsage,
 } from '@/components/ui/icons';
 import {
-  CPAMP_SYMBOL_COLOR_PNG_URL,
-  CPAMP_WORDMARK_COLOR_PNG_URL,
-  CPAMP_WORDMARK_ON_DARK_PNG_URL,
+  P4CPA_SYMBOL_SMALL_URL,
+  P4CPA_SYMBOL_SMALL_ON_DARK_URL,
+  P4CPA_WORDMARK_COLOR_PNG_URL,
+  P4CPA_WORDMARK_ON_DARK_PNG_URL,
 } from '@/assets/brand';
 import {
   useAuthStore,
@@ -57,7 +58,7 @@ import { isSupportedLanguage } from '@/utils/language';
 import type { Theme, VisualEffectsMode } from '@/types';
 
 const SIDEBAR_ICON_SIZE = 20;
-const GITHUB_REPOSITORY_URL = 'https://github.com/seakee/CPA-Manager-Plus';
+const GITHUB_REPOSITORY_URL = 'https://github.com/pccly/p4-cpa';
 
 const sidebarIcons: Record<string, ReactNode> = {
   dashboard: <IconSidebarDashboard size={SIDEBAR_ICON_SIZE} />,
@@ -271,7 +272,7 @@ function MainLayoutContent({ routeBase = '', demoMode = false }: MainLayoutProps
   const visualEffectsMenuRef = useRef<HTMLDivElement | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
 
-  const fullBrandName = 'CPA Manager Plus';
+  const fullBrandName = 'P4 CPA';
   const isLogsPage = routePathname.startsWith('/logs');
   const isPluginResourcePage = routePathname.startsWith('/plugin-pages');
   const showSidebarLabels = !sidebarCollapsed || sidebarOpen;
@@ -933,23 +934,28 @@ function MainLayoutContent({ routeBase = '', demoMode = false }: MainLayoutProps
         <aside
           className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}
         >
-          <div className="sidebar-brand" title={fullBrandName}>
+          <div className="sidebar-brand">
             <div className="sidebar-brand-main">
               <img
-                src={CPAMP_SYMBOL_COLOR_PNG_URL}
-                alt={showSidebarLabels ? '' : 'CPA Manager Plus'}
-                className="sidebar-brand-symbol"
+                src={P4CPA_SYMBOL_SMALL_URL}
+                alt={showSidebarLabels ? '' : 'P4 CPA'}
+                className="sidebar-brand-symbol sidebar-brand-symbol-light"
+              />
+              <img
+                src={P4CPA_SYMBOL_SMALL_ON_DARK_URL}
+                alt={showSidebarLabels ? '' : 'P4 CPA'}
+                className="sidebar-brand-symbol sidebar-brand-symbol-dark"
               />
               {showSidebarLabels && (
                 <>
                   <img
-                    src={CPAMP_WORDMARK_COLOR_PNG_URL}
-                    alt="CPA Manager Plus"
+                    src={P4CPA_WORDMARK_COLOR_PNG_URL}
+                    alt="P4 CPA"
                     className="sidebar-brand-wordmark sidebar-brand-wordmark-light"
                   />
                   <img
-                    src={CPAMP_WORDMARK_ON_DARK_PNG_URL}
-                    alt="CPA Manager Plus"
+                    src={P4CPA_WORDMARK_ON_DARK_PNG_URL}
+                    alt="P4 CPA"
                     className="sidebar-brand-wordmark sidebar-brand-wordmark-dark"
                   />
                 </>

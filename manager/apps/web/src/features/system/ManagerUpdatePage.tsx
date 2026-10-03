@@ -218,6 +218,16 @@ export function ManagerUpdatePage() {
         <IconChevronRight size={13} aria-hidden="true" />
         <span aria-current="page">{t('manager_updates.title')}</span>
       </nav>
+      <p>
+        {t('manager_updates.fork_notice')}{' '}
+        <a
+          href="https://github.com/pccly/p4-cpa/blob/main/docs/hosting.md#upgrades-and-rollback"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t('manager_updates.fork_guide')}
+        </a>
+      </p>
       <div className={styles.heading}>
         <div>
           <h1 ref={titleRef} tabIndex={-1}>

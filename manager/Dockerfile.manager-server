@@ -1,5 +1,5 @@
 FROM --platform=$BUILDPLATFORM node:22-alpine AS web-build
-ARG VERSION=dev
+ARG VERSION=1.0.0
 WORKDIR /app
 COPY package*.json ./
 COPY apps/web/package.json ./apps/web/package.json
@@ -9,7 +9,7 @@ WORKDIR /app/apps/web
 RUN VERSION=$VERSION npm run build
 
 FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS service-build
-ARG VERSION=dev
+ARG VERSION=1.0.0
 ARG SOURCE_COMMIT=unknown
 ARG TARGETOS
 ARG TARGETARCH
@@ -25,6 +25,7 @@ RUN apk add --no-cache ca-certificates wget tzdata
 WORKDIR /app
 COPY --from=service-build /out/cpa-manager-plus /usr/local/bin/cpa-manager-plus
 ENV HTTP_ADDR=0.0.0.0:18317
+ENV CPAMP_UPDATE_CHECK_ENABLED=false
 ENV USAGE_DATA_DIR=/data
 ENV USAGE_DB_PATH=/data/usage.sqlite
 EXPOSE 18317

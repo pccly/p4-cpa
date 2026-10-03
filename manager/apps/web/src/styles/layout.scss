@@ -438,23 +438,26 @@
 }
 
 .sidebar-brand-wordmark {
-  width: 79px;
-  height: 16px;
+  width: 86px;
+  height: 24px;
   object-fit: contain;
   display: block;
   flex-shrink: 0;
 }
 
-.sidebar-brand-wordmark-dark {
+.sidebar-brand-wordmark-dark,
+.sidebar-brand-symbol-dark {
   display: none;
 }
 
 [data-theme='dark'] {
-  .sidebar-brand-wordmark-light {
+  .sidebar-brand-wordmark-light,
+  .sidebar-brand-symbol-light {
     display: none;
   }
 
-  .sidebar-brand-wordmark-dark {
+  .sidebar-brand-wordmark-dark,
+  .sidebar-brand-symbol-dark {
     display: block;
   }
 }
@@ -753,5 +756,16 @@
       padding: var(--header-height) 0 0;
       overflow: hidden;
     }
+  }
+}
+
+// Kiln keeps the upstream navigation structure, with opaque clay-tinted selection.
+:root .nav-item {
+  &:hover,
+  &.active {
+    background: var(--sidebar-hover-bg-color);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }

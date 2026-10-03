@@ -195,6 +195,18 @@ Verify 8444 works before replacing 443. Roll back with `tailscale serve --tcp=44
 off`, then restore `tailscale serve --bg --https=443 http://127.0.0.1:18317`.
 The optional proxy can remain running privately during rollback.
 
+Tailnet port 443 is shared with the other `*.home.ccly.dev` services, whose public
+wildcard also resolves to the mini's tailnet address. Caddy routes the shared port by
+TLS server name (the layer4 plugin): `HTTPS_HOST` terminates in Caddy, and every other
+name passes through still encrypted to `HTTPS_PASSTHROUGH_UPSTREAM`
+(`host.docker.internal:443`, Nginx Proxy Manager, by default), so those services keep
+their own certificates. Check one after a change:
+
+```sh
+curl --resolve vault.home.ccly.dev:19443:127.0.0.1 \
+  https://vault.home.ccly.dev:19443/api/version -o /dev/null -w '%{http_code}\n'
+```
+
 Use `https://cpa.home.ccly.dev/management.html` for the manager and
 `https://cpa.home.ccly.dev/v1` for clients. `/v1/*` and `/v1beta/*` go to CPA with
 streaming enabled; other paths go to the manager. Application keys remain required.

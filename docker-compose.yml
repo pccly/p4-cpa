@@ -88,6 +88,10 @@ services:
     environment:
       HTTPS_HOST: ${HTTPS_HOST:-cpa.home.ccly.dev}
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
+      # Any other hostname arriving on this port is passed through, still encrypted, to here.
+      HTTPS_PASSTHROUGH_UPSTREAM: ${HTTPS_PASSTHROUGH_UPSTREAM:-host.docker.internal:443}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./https/Caddyfile:/etc/caddy/Caddyfile:ro
       # Included in the existing cold backup alongside the manager data.

@@ -1,9 +1,23 @@
 {
 	auto_https disable_redirects
 	acme_ca https://acme-v02.api.letsencrypt.org/directory
+
+	# Tailnet port 443 is shared: TLS for HTTPS_HOST terminates here, and every other
+	# hostname passes through untouched (SNI routing) to the host's existing proxy.
+	layer4 {
+		:443 {
+			@cpa tls sni {$HTTPS_HOST}
+			route @cpa {
+				proxy 127.0.0.1:8443
+			}
+			route {
+				proxy {$HTTPS_PASSTHROUGH_UPSTREAM}
+			}
+		}
+	}
 }
 
-{$HTTPS_HOST} {
+{$HTTPS_HOST}:8443 {
 	tls {
 		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
 		resolvers 1.1.1.1 1.0.0.1

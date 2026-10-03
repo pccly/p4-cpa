@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import {
-  IconGithub,
-  IconBookOpen,
-  IconExternalLink,
-  IconCode,
-  IconArrowUpFromLine,
-} from '@/components/ui/icons';
+import { IconGithub, IconBookOpen, IconExternalLink, IconCode } from '@/components/ui/icons';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { usePanelFeatureAvailability } from '@/hooks/usePanelFeatureAvailability';
 import {
@@ -39,7 +32,6 @@ import iconDeepseek from '@/assets/icons/deepseek.svg';
 import iconMinimax from '@/assets/icons/minimax.svg';
 import iconMeta from '@/assets/icons/meta.svg';
 import { DatabaseStatusCard } from './components/DatabaseStatusCard';
-import { useManagerUpdates } from './ManagerUpdates';
 import styles from './SystemPage.module.scss';
 
 const MODEL_CATEGORY_ICONS: Record<string, string | { light: string; dark: string }> = {
@@ -64,7 +56,6 @@ export function SystemPage() {
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
   const auth = useAuthStore();
   const featureAvailability = usePanelFeatureAvailability();
-  const updates = useManagerUpdates();
   const config = useConfigStore((state) => state.config);
   const fetchConfig = useConfigStore((state) => state.fetchConfig);
 
@@ -275,21 +266,11 @@ export function SystemPage() {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        <Card
-          title={t('system_info.quick_links_title')}
-          extra={
-            updates.available && (
-              <Link to="/system/updates" className="btn btn-secondary btn-sm">
-                <IconArrowUpFromLine size={16} aria-hidden="true" />
-                {t('manager_updates.title')}
-              </Link>
-            )
-          }
-        >
+        <Card title={t('system_info.quick_links_title')}>
           <p className={styles.sectionDescription}>{t('system_info.quick_links_desc')}</p>
           <div className={styles.quickLinks}>
             <a
-              href="https://github.com/router-for-me/CLIProxyAPI"
+              href="https://github.com/pccly/p4-cpa/blob/main/docs/upstream.md"
               target="_blank"
               rel="noopener noreferrer"
               className={styles.linkCard}
@@ -307,7 +288,7 @@ export function SystemPage() {
             </a>
 
             <a
-              href="https://github.com/seakee/CPA-Manager-Plus"
+              href="https://github.com/pccly/p4-cpa"
               target="_blank"
               rel="noopener noreferrer"
               className={styles.linkCard}
@@ -325,7 +306,7 @@ export function SystemPage() {
             </a>
 
             <a
-              href="https://seakee.github.io/CPA-Manager-Plus/docs/"
+              href="https://github.com/pccly/p4-cpa/blob/main/docs/hosting.md"
               target="_blank"
               rel="noopener noreferrer"
               className={styles.linkCard}

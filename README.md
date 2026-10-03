@@ -1,11 +1,9 @@
-# p4-cpa
+# P4 CPA
 
-Private deployment stack for [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)
-and [CPA Manager Plus](https://github.com/seakee/CPA-Manager-Plus) Full Mode.
-Both source trees live in this repository as Git subtrees with upstream history.
-Docker builds our own `p4-cpa/cpa:local` and `p4-cpa/manager:local` images.
-CPA handles model traffic; CPAMP
-provides the management UI and persistent usage history.
+P4 CLI Proxy API, a private proxy and management stack with its own **1.0.0** release line.
+The proxy core handles model traffic; P4 CPA provides management and persistent usage history.
+Docker builds `p4-cpa/cpa:local` and `p4-cpa/manager:local`.
+See [upstream provenance](docs/upstream.md) for the imported baseline and attribution.
 
 For the always-on Mac mini setup, private HTTPS, backups, upgrades, and manual
 Studio failover, see [Hosting and operations](docs/hosting.md).
@@ -40,7 +38,7 @@ docker compose down
 ```
 
 `down` stops this project while retaining local data. Do not run another stack
-against these same directories. Use one CPAMP collector per CPA usage queue.
+against these same directories. Use one P4 CPA manager collector per CPA usage queue.
 
 ## Configuration and keys
 
@@ -51,8 +49,8 @@ it preserves existing secrets and configuration. You may copy `.env.example` to
 generated. A lone existing `config.yaml` is preserved and requires restoring its
 matching `.env`. Do not commit generated files or output from `docker compose config`.
 
-- `CPA_MANAGEMENT_KEY` authorizes CPAMP to administer CPA.
-- `CPAMP_ADMIN_KEY` signs into the CPAMP panel.
+- `CPA_MANAGEMENT_KEY` authorizes P4 CPA manager to administer CPA.
+- `CPAMP_ADMIN_KEY` signs into the P4 CPA manager panel.
 - `CPA_CLIENT_KEY` authorizes inference clients.
 
 The manager uses upstream-supported `CPA_UPSTREAM_URL`, `CPA_MANAGEMENT_KEY`, and
@@ -96,7 +94,7 @@ Use the manager's usage analytics to compare cache reads and writes after enabli
 affinity. Hosting, authentication, and backup procedures are in
 [Hosting and operations](docs/hosting.md).
 
-## Modify and sync source
+## Modify source and integrate upstream
 
 - `cpa/`: CLIProxyAPI, initially `v8.0.11`; builds with its own `Dockerfile`.
 - `manager/`: CPA Manager Plus, initially `v1.14.2`; builds with its own
@@ -117,36 +115,35 @@ explicit release tag or branch; it never syncs both projects implicitly:
 ```
 
 The helper uses `git subtree pull` with full history and requires a clean worktree.
-Review changes and resolve any merge conflicts normally. Update build version
-arguments in `docker-compose.yml` when advancing upstream. `CPA_BUILD_DATE` can
+Review changes and resolve any merge conflicts normally. Keep P4 CPA product versions independent of upstream release numbers; see
+[the release policy](docs/upstream.md#independent-releases). `CPA_BUILD_DATE` can
 override the default imported source timestamp in build metadata. Back up persistent
 data, rebuild, and run `./scripts/verify.sh`. CPA v8 no longer provides legacy RESP
-output, so this stack explicitly uses CPAMP's HTTP usage collector.
+output, so this stack explicitly uses P4 CPA manager's HTTP usage collector.
 
 ## Ports and private access
 
 | Host default | Container | Purpose |
 | --- | --- | --- |
 | 127.0.0.1:8317 | CPA:8317 | Inference and management API |
-| 127.0.0.1:18317 | CPAMP:18317 | Full management panel |
+| 127.0.0.1:18317 | P4 CPA manager:18317 | Full management panel |
 | 127.0.0.1:8085 | CPA:8085 | OAuth callback |
 | 127.0.0.1:1455 | CPA:1455 | OAuth callback |
 | 127.0.0.1:54545 | CPA:54545 | OAuth callback |
 | 127.0.0.1:51121 | CPA:51121 | OAuth callback |
 | 127.0.0.1:11451 | CPA:11451 | OAuth callback |
 
-Ports can be overridden through `.env`. Set `BIND_IP` to this host's Tailscale IPv4
-address for direct tailnet access, then recreate containers. Restrict access using
-your tailnet ACLs. OAuth ports remain on loopback via separate `OAUTH_BIND_IP`.
+Ports can be overridden through `.env`. Keep `BIND_IP` and `OAUTH_BIND_IP` at `127.0.0.1`. Use the private Tailscale
+Serve setup in [Hosting and operations](docs/hosting.md) for tailnet access.
 The containers share one Compose bridge with outbound access for provider APIs.
 CPA `management.allow-remote` is necessary for the manager container; host bindings
 limit external access. Its separate built-in panel is disabled.
 
 ## OAuth on a headless host
 
-Start OAuth Login in CPAMP, then open the provider authorization URL in your local
+Start OAuth Login in P4 CPA manager, then open the provider authorization URL in your local
 browser. Some providers redirect to `http://localhost:<callback-port>/...`, where
-localhost means the browser's machine. For remote hosts, CPAMP supports pasting the
+localhost means the browser's machine. For remote hosts, P4 CPA manager supports pasting the
 **complete callback URL** into its callback field, even when that local page fails
 to load. Preserve both code and state, and never share callback URLs or auth files.
 Device-code providers do not need a callback listener.
@@ -169,7 +166,7 @@ change OAuth redirect URLs. Callbacks only listen while their login flow is acti
 | --- | --- |
 | `.env`, `config.yaml` | Deployment secrets and CPA configuration |
 | `auths/` | Provider OAuth credentials |
-| `data/` | CPAMP SQLite databases, sidecars, `data.key`, archives |
+| `data/` | P4 CPA manager SQLite databases, sidecars, `data.key`, archives |
 | `logs/` | CPA logs |
 | `plugins/` | Optional CPA plugins, disabled by default |
 
@@ -181,8 +178,8 @@ Losing `data.key` prevents recovery of management keys encrypted in the database
 ## Upstream references and license
 
 - [CPA configuration](https://github.com/router-for-me/CLIProxyAPI/blob/v8.0.11/config.example.yaml)
-- [CPAMP Docker deployment and environment settings](https://github.com/seakee/CPA-Manager-Plus/blob/v1.14.2/apps/docs/en/deployment/docker.md)
-- [CPAMP OAuth callbacks](https://github.com/seakee/CPA-Manager-Plus/blob/v1.14.2/apps/docs/en/manual/oauth.md)
+- [Upstream manager Docker deployment and environment settings](https://github.com/seakee/CPA-Manager-Plus/blob/v1.14.2/apps/docs/en/deployment/docker.md)
+- [Upstream manager OAuth callbacks](https://github.com/seakee/CPA-Manager-Plus/blob/v1.14.2/apps/docs/en/manual/oauth.md)
 
 Deployment files are MIT licensed. Upstream applications retain their own MIT
 licenses and copyrights; see [NOTICE](NOTICE). Image dependencies retain their

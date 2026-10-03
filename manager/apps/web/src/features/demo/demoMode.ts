@@ -1,7 +1,7 @@
 export const DEMO_ROUTE_BASE = '/demo';
 export const DEMO_API_BASE = 'http://demo.local';
 export const DEMO_MANAGEMENT_KEY = 'demo-management-key';
-export const DEMO_SERVER_VERSION = 'v7.1.18-demo';
+export const DEMO_SERVER_VERSION = '1.0.0';
 export const DEMO_SERVER_COMMIT = '5bffd1514fba2ca7cbfd13bb6530a6f7d9d72d43';
 export const DEMO_MAINTENANCE_QUERY_KEY = 'maintenance';
 

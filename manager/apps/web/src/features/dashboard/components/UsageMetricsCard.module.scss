@@ -70,6 +70,7 @@
     z-index: 1;
 
     .metricValue {
+      font-family: $font-mono;
       font-size: 24px;
       font-weight: 700;
       color: var(--text-primary);

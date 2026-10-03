@@ -235,7 +235,7 @@ Enable macOS Remote Login for the intended user, restricted to your private netw
 Forward only the chosen provider's port if another local application occupies one.
 The SSH local port must match the callback URL; the remote port must match the
 published Compose port. Do not expose callbacks publicly. Alternatively, paste the
-full returned callback URL into CPAMP's callback field; never share its code/state.
+full returned callback URL into the P4 CPA manager's callback field; never share its code/state.
 Device-code login does not require these listeners. Verify credential creation and
 one real request after connecting your own account.
 

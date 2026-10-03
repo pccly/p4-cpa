@@ -138,15 +138,15 @@ describe('xAI presentation', () => {
     ).toBe('Billing data format is not recognized · The cause could not be determined');
   });
 
-  it('directs client-version failures to upgrading CPA Manager Plus', () => {
+  it('directs client-version failures to upgrading P4 CPA', () => {
     for (const [localeName, locale] of Object.entries(locales)) {
       expect(String(getPath(locale, 'xai_quota.diagnostic_client_outdated')), localeName).toContain(
-        'CPA Manager Plus'
+        'P4 CPA'
       );
       expect(
         String(getPath(locale, 'monitoring.xai_inspection_reason_client_outdated')),
         localeName
-      ).toContain('CPA Manager Plus');
+      ).toContain('P4 CPA');
     }
   });
 });

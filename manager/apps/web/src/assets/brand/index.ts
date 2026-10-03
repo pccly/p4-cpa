@@ -1,75 +1,79 @@
-import cpampAppIconUrl from './cpamp-app-icon.svg';
-import cpampFaviconUrl from './favicon.svg';
-import cpampHorizontalLogoBlackUrl from './cpamp-logo-horizontal-black.svg';
-import cpampHorizontalLogoUrl from './cpamp-logo-horizontal-color.svg';
-import cpampHorizontalLogoOnDarkUrl from './cpamp-logo-horizontal-on-dark.svg';
-import cpampHorizontalLogoWhiteUrl from './cpamp-logo-horizontal-white.svg';
-import cpampHorizontalLogoPng1xUrl from './cpamp-logo-horizontal-color-240.png';
-import cpampHorizontalLogoPng2xUrl from './cpamp-logo-horizontal-color-480.png';
-import cpampHorizontalLogoPng4xUrl from './cpamp-logo-horizontal-color-960.png';
-import cpampHorizontalLogoOnDarkPng1xUrl from './cpamp-logo-horizontal-on-dark-240.png';
-import cpampHorizontalLogoOnDarkPng2xUrl from './cpamp-logo-horizontal-on-dark-480.png';
-import cpampHorizontalLogoOnDarkPng4xUrl from './cpamp-logo-horizontal-on-dark-960.png';
-import cpampVerticalLogoSvgUrl from './cpamp-logo-vertical-color.svg';
-import cpampVerticalLogoOnDarkSvgUrl from './cpamp-logo-vertical-on-dark.svg';
-import cpampVerticalLogoPng1xUrl from './cpamp-logo-vertical-color-100.png';
-import cpampVerticalLogoPng2xUrl from './cpamp-logo-vertical-color-200.png';
-import cpampVerticalLogoPng4xUrl from './cpamp-logo-vertical-color-400.png';
-import cpampVerticalLogoOnDarkPng1xUrl from './cpamp-logo-vertical-on-dark-100.png';
-import cpampVerticalLogoOnDarkPng2xUrl from './cpamp-logo-vertical-on-dark-200.png';
-import cpampVerticalLogoOnDarkPng4xUrl from './cpamp-logo-vertical-on-dark-400.png';
-import cpampSymbolBlackUrl from './cpamp-symbol-black.svg';
-import cpampSymbolColorUrl from './cpamp-symbol-color.svg';
-import cpampSymbolWhiteUrl from './cpamp-symbol-white.svg';
-import cpampWordmarkBlackUrl from './cpamp-wordmark-black.svg';
-import cpampWordmarkColorUrl from './cpamp-wordmark-color.svg';
-import cpampWordmarkOnDarkUrl from './cpamp-wordmark-on-dark.svg';
-import cpampWordmarkWhiteUrl from './cpamp-wordmark-white.svg';
-import cpampSymbolColorPngUrl from './cpamp-symbol-color.png';
-import cpampWordmarkColorPngUrl from './cpamp-wordmark-color.png';
-import cpampWordmarkOnDarkPngUrl from './cpamp-wordmark-on-dark.png';
+// P4 CPA brand assets.
+import p4cpaAppIconUrl from './p4cpa-app-icon.svg';
+import p4cpaFaviconUrl from './p4cpa-favicon.svg';
+import p4cpaHorizontalLogoBlackUrl from './p4cpa-logo-horizontal-black.svg';
+import p4cpaHorizontalLogoUrl from './p4cpa-logo-horizontal-color.svg';
+import p4cpaHorizontalLogoOnDarkUrl from './p4cpa-logo-horizontal-on-dark.svg';
+import p4cpaHorizontalLogoWhiteUrl from './p4cpa-logo-horizontal-white.svg';
+import p4cpaHorizontalLogoPng1xUrl from './p4cpa-logo-horizontal-color-240.png';
+import p4cpaHorizontalLogoPng2xUrl from './p4cpa-logo-horizontal-color-480.png';
+import p4cpaHorizontalLogoPng4xUrl from './p4cpa-logo-horizontal-color-960.png';
+import p4cpaHorizontalLogoOnDarkPng1xUrl from './p4cpa-logo-horizontal-on-dark-240.png';
+import p4cpaHorizontalLogoOnDarkPng2xUrl from './p4cpa-logo-horizontal-on-dark-480.png';
+import p4cpaHorizontalLogoOnDarkPng4xUrl from './p4cpa-logo-horizontal-on-dark-960.png';
+import p4cpaVerticalLogoSvgUrl from './p4cpa-logo-vertical-color.svg';
+import p4cpaVerticalLogoOnDarkSvgUrl from './p4cpa-logo-vertical-on-dark.svg';
+import p4cpaVerticalLogoPng1xUrl from './p4cpa-logo-vertical-color-100.png';
+import p4cpaVerticalLogoPng2xUrl from './p4cpa-logo-vertical-color-200.png';
+import p4cpaVerticalLogoPng4xUrl from './p4cpa-logo-vertical-color-400.png';
+import p4cpaVerticalLogoOnDarkPng1xUrl from './p4cpa-logo-vertical-on-dark-100.png';
+import p4cpaVerticalLogoOnDarkPng2xUrl from './p4cpa-logo-vertical-on-dark-200.png';
+import p4cpaVerticalLogoOnDarkPng4xUrl from './p4cpa-logo-vertical-on-dark-400.png';
+import p4cpaSymbolBlackUrl from './p4cpa-symbol-black.svg';
+import p4cpaSymbolColorUrl from './p4cpa-symbol-color.svg';
+import p4cpaSymbolWhiteUrl from './p4cpa-symbol-white.svg';
+import p4cpaWordmarkBlackUrl from './p4cpa-wordmark-black.svg';
+import p4cpaWordmarkColorUrl from './p4cpa-wordmark-color.svg';
+import p4cpaWordmarkOnDarkUrl from './p4cpa-wordmark-on-dark.svg';
+import p4cpaWordmarkWhiteUrl from './p4cpa-wordmark-white.svg';
+import p4cpaSymbolColorPngUrl from './p4cpa-symbol-color.png';
+import p4cpaWordmarkColorPngUrl from './p4cpa-wordmark-color.png';
+import p4cpaWordmarkOnDarkPngUrl from './p4cpa-wordmark-on-dark.png';
 
-export const CPAMP_APP_ICON_URL = cpampAppIconUrl;
-export const CPAMP_FAVICON_URL = cpampFaviconUrl;
-export const CPAMP_HORIZONTAL_LOGO_URL = cpampHorizontalLogoUrl;
-export const CPAMP_HORIZONTAL_LOGO_COLOR_URL = cpampHorizontalLogoUrl;
-export const CPAMP_HORIZONTAL_LOGO_BLACK_URL = cpampHorizontalLogoBlackUrl;
-export const CPAMP_HORIZONTAL_LOGO_WHITE_URL = cpampHorizontalLogoWhiteUrl;
-export const CPAMP_HORIZONTAL_LOGO_ON_DARK_URL = cpampHorizontalLogoOnDarkUrl;
-export const CPAMP_HORIZONTAL_LOGO_PNG_URL = cpampHorizontalLogoPng1xUrl;
-export const CPAMP_HORIZONTAL_LOGO_ON_DARK_PNG_URL = cpampHorizontalLogoOnDarkPng1xUrl;
-export const CPAMP_HORIZONTAL_LOGO_PNG_SRC_SET = [
-  `${cpampHorizontalLogoPng1xUrl} 1x`,
-  `${cpampHorizontalLogoPng2xUrl} 2x`,
-  `${cpampHorizontalLogoPng4xUrl} 4x`,
+export const P4CPA_APP_ICON_URL = p4cpaAppIconUrl;
+export const P4CPA_FAVICON_URL = p4cpaFaviconUrl;
+export const P4CPA_HORIZONTAL_LOGO_URL = p4cpaHorizontalLogoUrl;
+export const P4CPA_HORIZONTAL_LOGO_COLOR_URL = p4cpaHorizontalLogoUrl;
+export const P4CPA_HORIZONTAL_LOGO_BLACK_URL = p4cpaHorizontalLogoBlackUrl;
+export const P4CPA_HORIZONTAL_LOGO_WHITE_URL = p4cpaHorizontalLogoWhiteUrl;
+export const P4CPA_HORIZONTAL_LOGO_ON_DARK_URL = p4cpaHorizontalLogoOnDarkUrl;
+export const P4CPA_HORIZONTAL_LOGO_PNG_URL = p4cpaHorizontalLogoPng1xUrl;
+export const P4CPA_HORIZONTAL_LOGO_ON_DARK_PNG_URL = p4cpaHorizontalLogoOnDarkPng1xUrl;
+export const P4CPA_HORIZONTAL_LOGO_PNG_SRC_SET = [
+  `${p4cpaHorizontalLogoPng1xUrl} 1x`,
+  `${p4cpaHorizontalLogoPng2xUrl} 2x`,
+  `${p4cpaHorizontalLogoPng4xUrl} 4x`,
 ].join(', ');
-export const CPAMP_HORIZONTAL_LOGO_ON_DARK_PNG_SRC_SET = [
-  `${cpampHorizontalLogoOnDarkPng1xUrl} 1x`,
-  `${cpampHorizontalLogoOnDarkPng2xUrl} 2x`,
-  `${cpampHorizontalLogoOnDarkPng4xUrl} 4x`,
+export const P4CPA_HORIZONTAL_LOGO_ON_DARK_PNG_SRC_SET = [
+  `${p4cpaHorizontalLogoOnDarkPng1xUrl} 1x`,
+  `${p4cpaHorizontalLogoOnDarkPng2xUrl} 2x`,
+  `${p4cpaHorizontalLogoOnDarkPng4xUrl} 4x`,
 ].join(', ');
-export const CPAMP_VERTICAL_LOGO_URL = cpampVerticalLogoPng1xUrl;
-export const CPAMP_VERTICAL_LOGO_COLOR_URL = cpampVerticalLogoPng1xUrl;
-export const CPAMP_VERTICAL_LOGO_ON_DARK_URL = cpampVerticalLogoOnDarkPng1xUrl;
-export const CPAMP_VERTICAL_LOGO_SRC_SET = [
-  `${cpampVerticalLogoPng1xUrl} 1x`,
-  `${cpampVerticalLogoPng2xUrl} 2x`,
-  `${cpampVerticalLogoPng4xUrl} 4x`,
+export const P4CPA_VERTICAL_LOGO_URL = p4cpaVerticalLogoPng1xUrl;
+export const P4CPA_VERTICAL_LOGO_COLOR_URL = p4cpaVerticalLogoPng1xUrl;
+export const P4CPA_VERTICAL_LOGO_ON_DARK_URL = p4cpaVerticalLogoOnDarkPng1xUrl;
+export const P4CPA_VERTICAL_LOGO_SRC_SET = [
+  `${p4cpaVerticalLogoPng1xUrl} 1x`,
+  `${p4cpaVerticalLogoPng2xUrl} 2x`,
+  `${p4cpaVerticalLogoPng4xUrl} 4x`,
 ].join(', ');
-export const CPAMP_VERTICAL_LOGO_ON_DARK_SRC_SET = [
-  `${cpampVerticalLogoOnDarkPng1xUrl} 1x`,
-  `${cpampVerticalLogoOnDarkPng2xUrl} 2x`,
-  `${cpampVerticalLogoOnDarkPng4xUrl} 4x`,
+export const P4CPA_VERTICAL_LOGO_ON_DARK_SRC_SET = [
+  `${p4cpaVerticalLogoOnDarkPng1xUrl} 1x`,
+  `${p4cpaVerticalLogoOnDarkPng2xUrl} 2x`,
+  `${p4cpaVerticalLogoOnDarkPng4xUrl} 4x`,
 ].join(', ');
-export const CPAMP_VERTICAL_LOGO_SVG_URL = cpampVerticalLogoSvgUrl;
-export const CPAMP_VERTICAL_LOGO_ON_DARK_SVG_URL = cpampVerticalLogoOnDarkSvgUrl;
-export const CPAMP_SYMBOL_BLACK_URL = cpampSymbolBlackUrl;
-export const CPAMP_SYMBOL_COLOR_URL = cpampSymbolColorUrl;
-export const CPAMP_SYMBOL_WHITE_URL = cpampSymbolWhiteUrl;
-export const CPAMP_WORDMARK_BLACK_URL = cpampWordmarkBlackUrl;
-export const CPAMP_WORDMARK_COLOR_URL = cpampWordmarkColorUrl;
-export const CPAMP_WORDMARK_ON_DARK_URL = cpampWordmarkOnDarkUrl;
-export const CPAMP_WORDMARK_WHITE_URL = cpampWordmarkWhiteUrl;
-export const CPAMP_SYMBOL_COLOR_PNG_URL = cpampSymbolColorPngUrl;
-export const CPAMP_WORDMARK_COLOR_PNG_URL = cpampWordmarkColorPngUrl;
-export const CPAMP_WORDMARK_ON_DARK_PNG_URL = cpampWordmarkOnDarkPngUrl;
+export const P4CPA_VERTICAL_LOGO_SVG_URL = p4cpaVerticalLogoSvgUrl;
+export const P4CPA_VERTICAL_LOGO_ON_DARK_SVG_URL = p4cpaVerticalLogoOnDarkSvgUrl;
+export const P4CPA_SYMBOL_BLACK_URL = p4cpaSymbolBlackUrl;
+export const P4CPA_SYMBOL_COLOR_URL = p4cpaSymbolColorUrl;
+export const P4CPA_SYMBOL_WHITE_URL = p4cpaSymbolWhiteUrl;
+export const P4CPA_WORDMARK_BLACK_URL = p4cpaWordmarkBlackUrl;
+export const P4CPA_WORDMARK_COLOR_URL = p4cpaWordmarkColorUrl;
+export const P4CPA_WORDMARK_ON_DARK_URL = p4cpaWordmarkOnDarkUrl;
+export const P4CPA_WORDMARK_WHITE_URL = p4cpaWordmarkWhiteUrl;
+export const P4CPA_SYMBOL_COLOR_PNG_URL = p4cpaSymbolColorPngUrl;
+export const P4CPA_WORDMARK_COLOR_PNG_URL = p4cpaWordmarkColorPngUrl;
+export const P4CPA_WORDMARK_ON_DARK_PNG_URL = p4cpaWordmarkOnDarkPngUrl;
+
+export { default as P4CPA_SYMBOL_SMALL_URL } from './p4cpa-symbol-small-color.svg';
+export { default as P4CPA_SYMBOL_SMALL_ON_DARK_URL } from './p4cpa-symbol-small-on-dark.svg';

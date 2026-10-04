@@ -1,0 +1,50 @@
+name: Validate deployment
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  web-and-operations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: manager/package-lock.json
+      - run: npm ci
+        working-directory: manager
+      - run: npm run build
+        working-directory: manager
+      - run: npm --workspace apps/web run test -- src/components/common/PageTransition.test.tsx src/features/config/ConfigPage.test.ts src/features/config/ConfigPage.persistence.test.tsx src/features/config/model/configChanges.test.ts src/hooks/useVisualConfig.test.ts src/features/demo/demoApi.config.test.ts
+        working-directory: manager
+      - run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - run: git diff --check
+  proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: cpa/go.mod
+          cache-dependency-path: cpa/go.sum
+      - run: go test ./sdk/cliproxy/auth ./sdk/cliproxy
+        working-directory: cpa
+      - run: go build ./cmd/server
+        working-directory: cpa
+  manager:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: manager/apps/manager-server/go.mod
+          cache-dependency-path: manager/apps/manager-server/go.sum
+      - run: go test ./...
+        working-directory: manager/apps/manager-server

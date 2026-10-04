@@ -21,6 +21,8 @@ RUN go mod download
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags "-X github.com/seakee/cpa-manager-plus/apps/manager-server/internal/buildinfo.Version=$VERSION -X github.com/seakee/cpa-manager-plus/apps/manager-server/internal/buildinfo.SourceCommit=$SOURCE_COMMIT" -o /out/cpa-manager-plus ./cmd/cpa-manager-plus
 
 FROM alpine:3.21
+ARG SOURCE_COMMIT=unknown
+LABEL org.opencontainers.image.revision=${SOURCE_COMMIT}
 RUN apk add --no-cache ca-certificates wget tzdata
 WORKDIR /app
 COPY --from=service-build /out/cpa-manager-plus /usr/local/bin/cpa-manager-plus

@@ -9,6 +9,7 @@ import subprocess
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--install', action='store_true', help='load jobs on this Mac')
+parser.add_argument('--auto-deploy', action='store_true', help='also install the CI-gated main polling job')
 parser.add_argument('--runtime', choices=['orbstack', 'colima', 'existing'], default='orbstack')
 args = parser.parse_args()
 os.umask(0o077)
@@ -36,11 +37,15 @@ output.mkdir(parents=True, exist_ok=True)
 if args.install:
     logs.mkdir(parents=True, exist_ok=True, mode=0o700)
 for template in sorted((root / 'launchd').glob('*.plist')):
+    if template.name.endswith('.autodeploy.plist') and not args.auto_deploy:
+        continue
     data = replace(plistlib.loads(template.read_bytes()))
-    if data['Label'].endswith('.backup'):
+    if data['Label'].endswith(('.backup', '.autodeploy')):
         for key in ('BACKUP_DIR', 'BACKUP_KEEP'):
             if key in os.environ:
                 data['EnvironmentVariables'][key] = os.environ[key]
+    if data['Label'].endswith('.autodeploy'):
+        data['EnvironmentVariables']['BACKUP_KEEP'] = '0'
     target = output / template.name
     encoded = plistlib.dumps(data)
     changed = not target.exists() or target.read_bytes() != encoded

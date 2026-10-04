@@ -421,7 +421,11 @@ export function PageTransition({
                   isAnimating,
                 }}
               >
-                {render(layer.location)}
+                {render(
+                  layer.status === 'current' && layer.location.pathname === location.pathname
+                    ? location
+                    : layer.location
+                )}
               </PageTransitionLayerContext.Provider>
             </div>
           );

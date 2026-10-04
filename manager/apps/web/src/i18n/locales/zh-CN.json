@@ -3968,6 +3968,26 @@
     "upgrade_required_desc": "当前服务器版本不支持日志查看功能，请升级到最新版本的 CLI Proxy API 以使用此功能。"
   },
   "config_management": {
+    "workspace": {
+      "connection_settings": "连接与兼容性",
+      "categories": "分类",
+      "find_category": "查找分类",
+      "no_categories": "没有匹配的分类。",
+      "errors": "{{count}} 个错误",
+      "account_selection": "账号选择",
+      "changes": "更改",
+      "fix_errors": "请先修复配置错误，再保存。",
+      "pending_note": "保存前请检查更改。请求使用已保存的配置。",
+      "no_changes": "没有未保存的更改。",
+      "source_edits": "源文件有未保存的编辑。保存前请检查更改。",
+      "hidden_value": "值已隐藏",
+      "hidden_note": "此处隐藏敏感值和复杂值。保存前请检查所有更改。",
+      "before": "原值",
+      "after": "新值",
+      "review_changes": "检查更改",
+      "yaml_error": "配置包含无效的 YAML。请在源文件编辑器中修复后继续。",
+      "open_source": "打开源文件"
+    },
     "title": "配置面板",
     "editor_title": "配置文件",
     "reload": "重新加载",

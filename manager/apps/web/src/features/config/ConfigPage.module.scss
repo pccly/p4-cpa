@@ -353,7 +353,9 @@
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 
   &:hover:not(:disabled) {
     background: color-mix(in srgb, var(--text-primary) 8%, transparent);
@@ -689,131 +691,89 @@
   bottom: calc(16px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   z-index: 50;
-  pointer-events: auto;
-  width: fit-content;
-  max-width: calc(100vw - 24px);
+  width: min(880px, calc(100vw - 280px));
+  max-width: calc(100vw - 32px);
 }
-
 .floatingActionList {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  --glass-blur: 12px;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-backdrop-filter);
-  -webkit-backdrop-filter: var(--glass-backdrop-filter);
-  border: 1px solid var(--glass-border);
-  border-radius: 999px;
-  box-shadow: var(--shadow-lg);
-  max-width: inherit;
-  overflow-x: auto;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-.floatingStatus {
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  min-height: 28px;
-  padding: 0 10px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
-  color: var(--text-primary);
-  font-size: 11px;
-  font-weight: 700;
-  text-align: center;
-  max-width: min(280px, 46vw);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.floatingStatusCompact {
-  max-width: 112px;
-  padding: 0 8px;
-  font-size: 10px;
-}
-
-.floatingActionButton {
-  @include button-reset;
-  position: relative;
   display: flex;
   align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-lg);
+}
+.floatingStatus {
+  margin-right: auto;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.floatingStatusCompact {
+  font-size: 12px;
+}
+.floatingActionButton {
+  @include button-reset;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  cursor: pointer;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   color: var(--text-primary);
-  transition:
-    background-color 0.2s ease,
-    transform 0.15s ease;
-
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color $transition-fast;
   &:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
-    transform: scale(1.08);
+    background: var(--bg-hover);
   }
-
-  &:active:not(:disabled) {
-    transform: scale(0.95);
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
   }
-
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
   }
 }
-
-.dirtyDot {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: var(--warning-color);
-  box-shadow: 0 0 0 2px rgba($warning-color, 0.25);
+.saveAction {
+  background: var(--primary-color);
+  color: var(--button-primary-text, #fff);
+  border-color: var(--primary-color);
+  &:hover:not(:disabled) {
+    background: var(--primary-hover);
+  }
 }
-
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
   .floatingActionContainer {
-    bottom: calc(12px + env(safe-area-inset-bottom));
-    max-width: calc(100vw - 16px);
-  }
-
-  .floatingActionList {
-    gap: 6px;
-    padding: 8px 10px;
-  }
-
-  .floatingStatus {
-    max-width: min(180px, 40vw);
-    font-size: 10px;
-    padding: 0 8px;
-  }
-
-  .floatingActionButton {
-    width: 38px;
-    height: 38px;
-    flex: 0 0 auto;
+    width: calc(100vw - 32px);
+    left: 50%;
   }
 }
-
 @media (max-width: 480px) {
+  .floatingActionList {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+  }
   .floatingStatus {
-    max-width: min(132px, 38vw);
+    flex-basis: 100%;
+  }
+  .floatingActionButton {
+    flex: 1;
+    min-height: 44px;
+    padding: 8px;
+    font-size: 12px;
   }
 }
-
-@media (max-width: 380px) {
-  .workspaceShell {
-    padding: 0;
+@media (prefers-reduced-motion: reduce) {
+  .floatingActionButton {
+    transition: none;
   }
 }

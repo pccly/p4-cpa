@@ -28,13 +28,13 @@ def compose(*args, **kwargs):
     return run('docker', 'compose', *args, **kwargs)
 
 
-def backup():
+def backup(on_created=None):
     destination = Path(os.environ.get('BACKUP_DIR', str(Path.home() / 'Backups/p4-cpa'))).expanduser().resolve()
     if destination == ROOT or ROOT in destination.parents:
         raise ValueError('BACKUP_DIR must be outside the repository.')
     keep = int(os.environ.get('BACKUP_KEEP', '14'))
-    if keep < 1:
-        raise ValueError('BACKUP_KEEP must be at least 1.')
+    if keep < 0:
+        raise ValueError('BACKUP_KEEP must be nonnegative; 0 retains all archives.')
     paths = ['.env', 'config.yaml', 'auths', 'data', 'plugins']
     for name in paths:
         if not (ROOT / name).exists() or (ROOT / name).is_symlink():
@@ -62,6 +62,8 @@ def backup():
                 info.size, info.mode = len(metadata), 0o600
                 tar.addfile(info, io.BytesIO(metadata))
         os.replace(partial, archive)
+        if on_created:
+            on_created(archive)
     finally:
         # Restore only services that were running, including after an archive failure.
         if running:
@@ -72,7 +74,7 @@ def backup():
     archives = sorted((p for p in destination.iterdir()
                        if pattern.fullmatch(p.name) and p.is_file() and not p.is_symlink()),
                       key=lambda p: p.stat().st_mtime_ns, reverse=True)
-    for old in archives[keep:]:
+    for old in archives[keep:] if keep else []:
         old.unlink()
         print(f'Pruned: {old.name}', flush=True)
     return archive
@@ -112,16 +114,20 @@ def interrupted(_signum, _frame):
     raise KeyboardInterrupt
 
 
-if __name__ == '__main__':
+def main(operation):
     try:
-        if len(sys.argv) != 2 or sys.argv[1] not in ('backup', 'upgrade', 'start'):
-            raise ValueError('Usage: ops.py backup|upgrade|start')
         signal.signal(signal.SIGTERM, interrupted)
         (ROOT / '.artifacts').mkdir(exist_ok=True)
         with (ROOT / '.artifacts/operations.lock').open('a') as lock:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            {'backup': backup, 'upgrade': upgrade, 'start': start}[sys.argv[1]]()
+            operation()
     except BlockingIOError:
         sys.exit('Another p4-cpa operation is running in this checkout.')
     except (ValueError, OSError, subprocess.SubprocessError, KeyboardInterrupt) as error:
         sys.exit(f'Operation failed: {error}')
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2 or sys.argv[1] not in ('backup', 'upgrade', 'start'):
+        sys.exit('Usage: ops.py backup|upgrade|start')
+    main({'backup': backup, 'upgrade': upgrade, 'start': start}[sys.argv[1]])

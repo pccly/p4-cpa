@@ -47,6 +47,7 @@ import {
   type ManagerConfigResponse,
 } from '@/services/api/usageService';
 import { detectApiBaseFromLocation } from '@/utils/connection';
+import { ConfigChangesPanel } from './components/ConfigChangesPanel';
 import { ManagerConfigPanel } from './components/ManagerConfigPanel';
 import styles from './ConfigPage.module.scss';
 
@@ -863,10 +864,7 @@ export function ConfigPage() {
 
     setActiveTab('source');
     localStorage.setItem(CONFIG_TAB_STORAGE_KEY, 'source');
-    showNotification(
-      t('config_management.visual_mode_unavailable_detail', { message: visualParseError }),
-      'error'
-    );
+    showNotification(t('config_management.workspace.yaml_error'), 'error');
   }, [activeTab, showNotification, t, visualParseError]);
 
   useEffect(() => {
@@ -1281,10 +1279,7 @@ export function ConfigPage() {
       } else {
         const result = loadVisualValuesFromYaml(content);
         if (!result.ok) {
-          showNotification(
-            t('config_management.visual_mode_unavailable_detail', { message: result.error }),
-            'error'
-          );
+          showNotification(t('config_management.workspace.yaml_error'), 'error');
           return;
         }
       }
@@ -1436,6 +1431,12 @@ export function ConfigPage() {
     };
   }, [shouldRenderFloatingActions]);
 
+  const livePreviewYaml = useMemo(
+    () =>
+      activeTab === 'visual' && !visualParseError ? applyVisualChangesToYaml(content) : content,
+    [activeTab, visualParseError, applyVisualChangesToYaml, content]
+  );
+
   // Status text
   const getStatusText = () => {
     if (isManagerTab) {
@@ -1552,14 +1553,14 @@ export function ConfigPage() {
           className={styles.floatingActionButton}
           onClick={handleReload}
           disabled={loading || saving || managerSaving || apiKeyMutationInFlight}
-          title={t('config_management.reload')}
           aria-label={t('config_management.reload')}
         >
           <IconRefreshCw size={16} />
+          {t('config_management.reload')}
         </button>
         <button
           type="button"
-          className={styles.floatingActionButton}
+          className={`${styles.floatingActionButton} ${styles.saveAction}`}
           onClick={handleSave}
           disabled={
             isManagerTab
@@ -1578,11 +1579,14 @@ export function ConfigPage() {
                 hasVisualModeError ||
                 hasVisualValidationErrors
           }
-          title={t('config_management.save')}
-          aria-label={t('config_management.save')}
+          aria-label={t(
+            isManagerTab ? 'config_management.save' : 'config_management.workspace.review_changes'
+          )}
         >
           <IconCheck size={16} />
-          {isDirty && <span className={styles.dirtyDot} aria-hidden="true" />}
+          {t(
+            isManagerTab ? 'config_management.save' : 'config_management.workspace.review_changes'
+          )}
         </button>
       </div>
     </div>
@@ -1642,7 +1646,12 @@ export function ConfigPage() {
           {isManagerTab && managerError && <div className="error-box">{managerError}</div>}
           {!isManagerTab && !error && visualParseError && (
             <div className="error-box">
-              {t('config_management.visual_mode_unavailable_detail', { message: visualParseError })}
+              {t('config_management.workspace.yaml_error')}
+              {activeTab === 'visual' && (
+                <Button variant="secondary" size="sm" onClick={() => handleTabChange('source')}>
+                  {t('config_management.workspace.open_source')}
+                </Button>
+              )}
             </div>
           )}
 
@@ -1704,6 +1713,14 @@ export function ConfigPage() {
           ) : activeTab === 'visual' ? (
             <VisualConfigEditor
               values={visualValues}
+              changesPanel={
+                <ConfigChangesPanel
+                  original={serverYaml}
+                  modified={livePreviewYaml}
+                  invalid={Boolean(visualParseError) || hasVisualValidationErrors}
+                  pending={isDirty}
+                />
+              }
               validationErrors={visualValidationErrors}
               hasPayloadValidationErrors={visualHasPayloadValidationErrors}
               disabled={
@@ -1712,7 +1729,8 @@ export function ConfigPage() {
                 saving ||
                 managerSaving ||
                 diffModalOpen ||
-                apiKeyMutationInFlight
+                apiKeyMutationInFlight ||
+                Boolean(visualParseError)
               }
               onChange={setVisualValues}
               onPersistApiKeyMutation={persistApiKeyMutation}

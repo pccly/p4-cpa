@@ -302,6 +302,52 @@ Do not downgrade a migrated database without its matching pre-upgrade backup.
 Repoint/reinstall launch jobs only after verification. These scripts do not pull
 upstream subtrees automatically; source updates use `scripts/sync-upstream.sh`.
 
+## Automatic deployment on the primary mini
+
+The repo ship skill is [.agents/skills/p4-cpa-ship/SKILL.md](../.agents/skills/p4-cpa-ship/SKILL.md).
+The optional `codes.p4.cpa.autodeploy` LaunchAgent polls `origin/main` every 300 seconds.
+It uses outbound Git and GitHub API access; no inbound webhook or production CI runner is needed.
+
+Prerequisites on the primary mini: a clean `main` checkout, running healthy stack,
+Docker/Compose, Python 3, Git, and `gh` with unattended read access to this private repository
+and its Actions runs. Keep authentication in the host's existing credential store. Never
+put tokens in a plist, command argument, or committed file.
+
+```sh
+# Render and inspect first. This does not install or start the poller.
+./scripts/install-launchd.sh --auto-deploy --runtime orbstack
+plutil -lint .artifacts/launchd/*.plist
+# On the primary mini only, after the first verified deployment:
+./scripts/install-launchd.sh --install --auto-deploy --runtime orbstack
+launchctl print gui/$(id -u)/codes.p4.cpa.autodeploy
+```
+
+Each poll fetches main and requires successful `Validate deployment` push CI for the
+exact SHA. Pending, failed, missing, or unreadable CI never deploys. PR checks alone
+are insufficient. The job uses the same lock as startup and backup, refuses dirty or
+non-main checkouts and stopped primary services, retains a cold backup, fast-forwards
+to that exact SHA, builds, and recreates the stack with a 120-second health wait.
+The verifier checks manager connectivity and authentication; both app containers must
+carry the matching `org.opencontainers.image.revision` label. Build metadata is set
+from the deployed repository SHA rather than the imported upstream versions.
+
+State is `.artifacts/deployment.json`; logs are `~/Library/Logs/p4-cpa/autodeploy.log`.
+A failed or interrupted deployment latches a pause for all later polls. Investigate
+before explicitly retrying with `P4_CPA_DEPLOY_RETRY=1 ./scripts/auto-deploy.sh`.
+The state records the prior revision and backup. There is no automatic data restore:
+a migrated database needs its matching backup to roll back. Automatic backups use
+`BACKUP_KEEP=0` and retain all archives; monitor space and prune only deliberately.
+Deployment archives live in the `deployments/` subdirectory of `BACKUP_DIR`
+(default `~/Backups/p4-cpa`), outside normal daily backup pruning. Retries retain
+the original pre-deployment backup reference as well as creating a fresh archive.
+
+To pause across logins, `launchctl disable gui/$(id -u)/codes.p4.cpa.autodeploy` and
+`launchctl bootout gui/$(id -u)/codes.p4.cpa.autodeploy`. Use `launchctl enable` before
+reinstalling. A normal merge does not change the installed poller or its interval;
+reinstall after plist changes. The host must be awake and logged in. Expect brief
+service interruption for backup and container replacement. Verify the private HTTPS
+manager and another shared SNI hostname after deployment.
+
 ## Manual Studio failover
 
 1. Fence the mini first: stop its stack and disable startup. If unreachable, power

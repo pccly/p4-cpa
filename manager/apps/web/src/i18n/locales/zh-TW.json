@@ -3968,6 +3968,26 @@
     "upgrade_required_desc": "目前伺服器版本不支援記錄檢視功能，請升級到最新版本的 CLI Proxy API 以使用此功能。"
   },
   "config_management": {
+    "workspace": {
+      "connection_settings": "連線與相容性",
+      "categories": "分類",
+      "find_category": "尋找分類",
+      "no_categories": "沒有符合的分類。",
+      "errors": "{{count}} 個錯誤",
+      "account_selection": "帳號選擇",
+      "changes": "變更",
+      "fix_errors": "請先修正設定錯誤，再儲存。",
+      "pending_note": "儲存前請檢查變更。請求使用已儲存的設定。",
+      "no_changes": "沒有未儲存的變更。",
+      "source_edits": "原始檔有未儲存的編輯。儲存前請檢查變更。",
+      "hidden_value": "值已隱藏",
+      "hidden_note": "此處隱藏敏感值和複雜值。儲存前請檢查所有變更。",
+      "before": "原值",
+      "after": "新值",
+      "review_changes": "檢查變更",
+      "yaml_error": "設定包含無效的 YAML。請在原始檔編輯器中修正後繼續。",
+      "open_source": "開啟原始檔"
+    },
     "title": "設定面板",
     "editor_title": "設定檔",
     "reload": "重新載入",

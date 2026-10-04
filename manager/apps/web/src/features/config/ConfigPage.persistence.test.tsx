@@ -366,7 +366,13 @@ const clickTab = async (tab: string) => {
 };
 
 const startPendingSave = async () => {
-  const target = renderer?.root.findByProps({ 'aria-label': 'config_management.save' });
+  const target = renderer?.root.find(
+    (node) =>
+      node.type === 'button' &&
+      ['config_management.save', 'config_management.workspace.review_changes'].includes(
+        node.props['aria-label']
+      )
+  );
   if (!target) throw new Error('Save button not found');
   let pending!: Promise<unknown>;
   await act(async () => {
@@ -378,7 +384,13 @@ const startPendingSave = async () => {
 };
 
 const clickSave = async () => {
-  const target = renderer?.root.findByProps({ 'aria-label': 'config_management.save' });
+  const target = renderer?.root.find(
+    (node) =>
+      node.type === 'button' &&
+      ['config_management.save', 'config_management.workspace.review_changes'].includes(
+        node.props['aria-label']
+      )
+  );
   if (!target) throw new Error('Save button not found');
   await act(async () => {
     await target.props.onClick();

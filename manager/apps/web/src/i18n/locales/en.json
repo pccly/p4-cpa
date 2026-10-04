@@ -3973,6 +3973,28 @@
     "upgrade_required_desc": "The current server version does not support the logs viewing feature. Please upgrade to the latest version of CLI Proxy API to use this feature."
   },
   "config_management": {
+    "workspace": {
+      "connection_settings": "Connection & compatibility",
+      "categories": "Categories",
+      "find_category": "Find a category",
+      "no_categories": "No matching categories.",
+      "errors": "{{count}} errors",
+      "errors_one": "{{count}} error",
+      "errors_other": "{{count}} errors",
+      "account_selection": "Account selection",
+      "changes": "Changes",
+      "fix_errors": "Fix configuration errors before saving.",
+      "pending_note": "Review your edits before saving. Requests use the saved configuration.",
+      "no_changes": "No unsaved changes.",
+      "source_edits": "Source edits are pending. Review changes before saving.",
+      "hidden_value": "Value hidden",
+      "hidden_note": "Sensitive and complex values are hidden here. Review all changes before saving.",
+      "before": "Previous value",
+      "after": "New value",
+      "review_changes": "Review changes",
+      "yaml_error": "The configuration contains invalid YAML. Fix it in the source editor to continue.",
+      "open_source": "Open source"
+    },
     "title": "Config Panel",
     "editor_title": "Configuration File",
     "reload": "Reload",

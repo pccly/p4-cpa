@@ -601,6 +601,9 @@ function getNextDirtyFields(
       nextValues.quotaAntigravityCredits === baselineValues.quotaAntigravityCredits
     );
   }
+  if (Object.prototype.hasOwnProperty.call(patch, 'allowExtraUsage')) {
+    updateDirty('allowExtraUsage', nextValues.allowExtraUsage === baselineValues.allowExtraUsage);
+  }
   if (Object.prototype.hasOwnProperty.call(patch, 'routingStrategy')) {
     updateDirty('routingStrategy', nextValues.routingStrategy === baselineValues.routingStrategy);
   }
@@ -892,6 +895,7 @@ export function useVisualConfig() {
         quotaSwitchPreviewModel: Boolean(quotaExceeded?.['switch-preview-model'] ?? false),
         quotaAntigravityCredits: Boolean(quotaExceeded?.['antigravity-credits'] ?? false),
 
+        allowExtraUsage: routing?.['allow-extra-usage'] === true,
         routingStrategy: normalizeRoutingStrategy(routing?.strategy) ?? 'round-robin',
         routingSessionAffinity: Boolean(
           routing?.['session-affinity'] ?? routing?.sessionAffinity ?? routing?.['sessionAffinity']
@@ -1277,11 +1281,15 @@ export function useVisualConfig() {
         }
 
         const routingDirty =
+          isDirty('allowExtraUsage') ||
           isDirty('routingStrategy') ||
           isDirty('routingSessionAffinity') ||
           isDirty('routingSessionAffinityTTL');
         if (routingDirty) {
           ensureMapInDoc(doc, ['routing']);
+          if (isDirty('allowExtraUsage')) {
+            doc.setIn(['routing', 'allow-extra-usage'], values.allowExtraUsage);
+          }
           if (isDirty('routingStrategy')) {
             doc.setIn(['routing', 'strategy'], values.routingStrategy);
           }

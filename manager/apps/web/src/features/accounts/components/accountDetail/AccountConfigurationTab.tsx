@@ -378,6 +378,29 @@ export function AccountConfigurationTab({
         <h3 className={styles.configurationSectionTitle}>
           {t('accounts.config_section_advanced')}
         </h3>
+        {(state.providerKey === 'codex' || state.providerKey === 'claude') && (
+          <div className="form-group">
+            <label htmlFor="account-extra-usage">{t('extra_usage.label')}</label>
+            <Select
+              id="account-extra-usage"
+              value={draft.allowExtraUsage}
+              options={[
+                { value: 'inherit', label: t('extra_usage.inherit') },
+                { value: 'on', label: t('extra_usage.on') },
+                { value: 'off', label: t('extra_usage.off') },
+              ]}
+              disabled={disabled}
+              ariaLabel={t('extra_usage.label')}
+              ariaDescribedBy="account-extra-usage-hint"
+              onChange={(value) =>
+                editor.updateField('allowExtraUsage', value as 'inherit' | 'on' | 'off')
+              }
+            />
+            <div className="hint" id="account-extra-usage-hint">
+              {t('extra_usage.credential_hint')}
+            </div>
+          </div>
+        )}
         <CoolingPolicySelect
           value={draft.disableCooling}
           onChange={(value) => editor.updateField('disableCooling', value)}

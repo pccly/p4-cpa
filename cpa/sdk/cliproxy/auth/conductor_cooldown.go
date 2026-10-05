@@ -161,6 +161,9 @@ func (m *Manager) setConfigSnapshotLocked(cfg *internalconfig.Config) bool {
 		m.homeSessionAliases.clear()
 	}
 	m.runtimeConfig.Store(cfg)
+	if previousCfg == nil || previousCfg.Routing.AllowExtraUsage != cfg.Routing.AllowExtraUsage {
+		m.refreshExtraUsageDefaults()
+	}
 	clearedCooldowns := m.clearDisabledCooldownStates(cfg)
 	if clearedCooldowns && oldCooldownStore != nil {
 		m.mu.Lock()
@@ -985,6 +988,7 @@ func (m *Manager) MarkResult(ctx context.Context, result Result) {
 		auth.UpdatedAt = now
 
 		if !result.SkipQuotaObservation {
+			recordSubscriptionWindows(auth, subscriptionWindowsFromHeaders(result.Provider, responseHeaders, now), now, false)
 			auth.Quota.ObserveResponseHeadersForProvider(result.Provider, responseHeaders, now)
 			if modelState != nil {
 				modelState.Quota.ObserveResponseHeadersForProvider(result.Provider, responseHeaders, now)
@@ -1007,7 +1011,7 @@ func (m *Manager) MarkResult(ctx context.Context, result Result) {
 				targetModels = append(targetModels, routeKey)
 			}
 		}
-		m.scheduler.upsertAuthResult(authSnapshot, targetModels, result.CredentialScope)
+		m.scheduler.upsertAuthResult(authSnapshot, targetModels, result.CredentialScope || (!result.SkipQuotaObservation && ProviderSupportsQuotaObservation(result.Provider)))
 	}
 	if authSnapshot != nil && cooldownStateChanged {
 		m.persistCooldownStates(context.Background())

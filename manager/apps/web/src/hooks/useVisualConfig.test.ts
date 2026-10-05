@@ -42,6 +42,26 @@ const mountUseVisualConfig = (): UseVisualConfigHarness => {
 };
 
 describe('useVisualConfig', () => {
+  it('round-trips extra usage in v8 without changing routing strategy', () => {
+    const harness = mountUseVisualConfig();
+    const yaml = 'config-version: 8\nrouting: {strategy: reset-first}\n';
+    act(() => harness.getCurrent().loadVisualValuesFromYaml(yaml));
+    expect(harness.getCurrent().visualValues.allowExtraUsage).toBe(false);
+    act(() => harness.getCurrent().setVisualValues({ allowExtraUsage: true }));
+    const saved = harness.getCurrent().applyVisualChangesToYaml(yaml);
+    expect(parseYaml(saved).routing).toEqual({
+      strategy: 'reset-first',
+      'allow-extra-usage': true,
+    });
+    act(() => harness.getCurrent().loadVisualValuesFromYaml(saved));
+    expect(harness.getCurrent().visualValues.allowExtraUsage).toBe(true);
+    act(() => harness.getCurrent().setVisualValues({ allowExtraUsage: false }));
+    expect(
+      parseYaml(harness.getCurrent().applyVisualChangesToYaml(saved)).routing['allow-extra-usage']
+    ).toBe(false);
+    harness.unmount();
+  });
+
   it('preserves reset-first when changing another setting and round-trips routing edits', () => {
     const harness = mountUseVisualConfig();
     const yaml = 'config-version: 8\nrouting: {strategy: reset-first, session-affinity: true}\n';

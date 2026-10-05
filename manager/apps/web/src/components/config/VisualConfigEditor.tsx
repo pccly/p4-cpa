@@ -859,6 +859,13 @@ export function VisualConfigEditor({
                   />
                 </SectionGrid>
                 <ToggleRow
+                  title={t('extra_usage.label')}
+                  description={t('extra_usage.global_hint')}
+                  checked={values.allowExtraUsage}
+                  disabled={disabled}
+                  onChange={(allowExtraUsage) => onChange({ allowExtraUsage })}
+                />
+                <ToggleRow
                   title={t('config_management.visual.sections.network.session_affinity')}
                   checked={values.routingSessionAffinity}
                   disabled={disabled}

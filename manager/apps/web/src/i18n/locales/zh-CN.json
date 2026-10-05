@@ -1,4 +1,12 @@
 {
+  "extra_usage": {
+    "label": "允许额外用量",
+    "global_hint": "订阅额度耗尽后，允许 Codex 和 Claude 凭据使用积分或付费额外用量。单个凭据可以覆盖此默认设置。",
+    "credential_hint": "覆盖全局设置。关闭后，已知订阅额度耗尽的凭据将被跳过，直到额度重置。",
+    "inherit": "使用全局设置",
+    "on": "开启",
+    "off": "关闭"
+  },
   "manager_updates": {
     "fork_notice": "此处为上游管理器版本。请通过源代码更新 P4 CPA 并重新构建本地镜像；上游安装包不包含此品牌定制。",
     "fork_guide": "P4 CPA 升级指南",

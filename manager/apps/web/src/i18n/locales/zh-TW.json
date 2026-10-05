@@ -1,4 +1,12 @@
 {
+  "extra_usage": {
+    "label": "允許額外用量",
+    "global_hint": "訂閱額度耗盡後，允許 Codex 和 Claude 憑證使用點數或付費額外用量。個別憑證可以覆寫此預設設定。",
+    "credential_hint": "覆寫全域設定。關閉後，已知訂閱額度耗盡的憑證將被略過，直到額度重設。",
+    "inherit": "使用全域設定",
+    "on": "開啟",
+    "off": "關閉"
+  },
   "manager_updates": {
     "fork_notice": "此處為上游管理器版本。請透過原始碼更新 P4 CPA 並重新建置本機映像；上游安裝包不包含此品牌定製。",
     "fork_guide": "P4 CPA 升級指南",

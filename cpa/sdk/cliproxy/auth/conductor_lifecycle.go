@@ -114,6 +114,7 @@ func (m *Manager) Register(ctx context.Context, auth *Auth) (*Auth, error) {
 	m.authEpochs[auth.ID]++
 	auth.RegistrationEpoch = m.authEpochs[auth.ID]
 	auth.Generation = 1
+	auth.extraUsageDefault = m.runtimeConfig.Load().(*internalconfig.Config).Routing.AllowExtraUsage
 	authClone := auth.Clone()
 	m.auths[auth.ID] = authClone
 	m.mu.Unlock()
@@ -212,6 +213,14 @@ func (m *Manager) updateInternal(ctx context.Context, base, auth *Auth, mode upd
 		auth.Index = existing.Index
 		auth.indexAssigned = existing.indexAssigned
 	}
+	if auth.Metadata == nil {
+		auth.Metadata = make(map[string]any)
+	}
+	if blocks, ok := existing.Metadata[subscriptionQuotaBlocksKey]; ok {
+		auth.Metadata[subscriptionQuotaBlocksKey] = blocks
+	} else {
+		delete(auth.Metadata, subscriptionQuotaBlocksKey)
+	}
 	auth.Success = existing.Success
 	auth.Failed = existing.Failed
 	auth.recentRequests = existing.recentRequests
@@ -264,6 +273,7 @@ func (m *Manager) updateInternal(ctx context.Context, base, auth *Auth, mode upd
 			return nil, fmt.Errorf("persist meta auth: %w", errPersist)
 		}
 	}
+	auth.extraUsageDefault = m.runtimeConfig.Load().(*internalconfig.Config).Routing.AllowExtraUsage
 	authClone := auth.Clone()
 	m.auths[auth.ID] = authClone
 	m.mu.Unlock()
@@ -390,6 +400,7 @@ func (m *Manager) Load(ctx context.Context) error {
 		m.authEpochs[auth.ID] = max(m.authEpochs[auth.ID], auth.RegistrationEpoch) + 1
 		auth.RegistrationEpoch = m.authEpochs[auth.ID]
 		auth.Generation = 1
+		auth.extraUsageDefault = m.runtimeConfig.Load().(*internalconfig.Config).Routing.AllowExtraUsage
 		m.auths[auth.ID] = auth.Clone()
 	}
 

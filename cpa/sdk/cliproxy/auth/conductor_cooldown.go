@@ -509,6 +509,9 @@ func (m *Manager) ResetQuota(ctx context.Context, authID string) (*Auth, []strin
 		models = append(models, registeredModels...)
 	}
 	models = dedupeStrings(models)
+	// A manual reset also reopens exhausted subscription windows; the next
+	// exhausted response records them again.
+	delete(auth.Metadata, subscriptionQuotaBlocksKey)
 
 	if !auth.Disabled && auth.Status != StatusDisabled && !hasModelError(auth, now) {
 		auth.LastError = nil

@@ -180,3 +180,25 @@ func TestExtraUsageQuotaProbe(t *testing.T) {
 		})
 	}
 }
+
+func TestExtraUsageResetQuotaClearsSubscriptionBlock(t *testing.T) {
+	ctx := context.Background()
+	m := NewManager(nil, nil, nil)
+	reset := strconv.FormatInt(time.Now().Add(time.Hour).Unix(), 10)
+	a, err := m.Register(ctx, &Auth{ID: "reset-block", Provider: "codex", Metadata: map[string]any{
+		subscriptionQuotaBlocksKey: map[string]any{"codex-primary": reset},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if blocked, _ := subscriptionQuotaBlock(a, "gpt-5", time.Now()); !blocked {
+		t.Fatal("precondition: subscription block not applied")
+	}
+	if _, _, err = m.ResetQuota(ctx, a.ID); err != nil {
+		t.Fatal(err)
+	}
+	updated, _ := m.GetByID(a.ID)
+	if blocked, _ := subscriptionQuotaBlock(updated, "gpt-5", time.Now()); blocked {
+		t.Fatal("reset quota kept subscription block")
+	}
+}

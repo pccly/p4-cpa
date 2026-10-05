@@ -532,3 +532,21 @@ describe('buildRedactedAuthFileConfigurationText', () => {
     });
   });
 });
+
+describe('extra usage credential policy', () => {
+  it.each([
+    [undefined, 'inherit', 'on', true],
+    [true, 'on', 'off', false],
+    [false, 'off', 'inherit', null],
+  ] as const)('loads and patches %s', (value, policy, next, expected) => {
+    const record = { allow_extra_usage: value };
+    const original = buildAuthFileConfigurationDraft(record, 'codex');
+    expect(original.allowExtraUsage).toBe(policy);
+    const result = buildAuthFileConfigurationPatch(record, 'codex', original, {
+      ...original,
+      allowExtraUsage: next,
+    });
+    expect(result.patch).toEqual({ allow_extra_usage: expected });
+    expect(result.errors).toEqual({});
+  });
+});

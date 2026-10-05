@@ -67,6 +67,7 @@ export type AuthFileFieldsPatch = {
   'excluded-models'?: string[] | null;
   excluded_models?: string[] | null;
   excludedModels?: null;
+  allow_extra_usage?: boolean | null;
   disable_cooling?: boolean | null;
   disableCooling?: null;
   'disable-cooling'?: null;
@@ -754,6 +755,10 @@ export const applyAuthFileFieldsPatchToRecord = (
   }
   if (fields.excludedModels === null) delete next.excludedModels;
 
+  if (fields.allow_extra_usage !== undefined) {
+    if (fields.allow_extra_usage === null) delete next.allow_extra_usage;
+    else next.allow_extra_usage = fields.allow_extra_usage;
+  }
   if (fields.disable_cooling !== undefined) {
     if (fields.disable_cooling === null) {
       delete next.disable_cooling;

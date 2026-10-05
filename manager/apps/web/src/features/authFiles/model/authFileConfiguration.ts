@@ -37,6 +37,7 @@ export type AuthFileConfigurationDraft = {
   note: string;
   headersText: string;
   excludedModelsText: string;
+  allowExtraUsage: 'inherit' | 'on' | 'off';
   disableCooling: CoolingPolicy;
   requestRetry: string;
   websockets: boolean;
@@ -372,6 +373,12 @@ export const buildAuthFileConfigurationDraft = (
     note: readTrimmedString(record.note),
     headersText: Object.keys(headers).length > 0 ? JSON.stringify(headers, null, 2) : '',
     excludedModelsText: excludedModels.join('\n'),
+    allowExtraUsage:
+      record.allow_extra_usage === true
+        ? 'on'
+        : record.allow_extra_usage === false
+          ? 'off'
+          : 'inherit',
     disableCooling: coolingPolicyFromOverride(readCredentialCoolingOverride(record)),
     requestRetry: readIntegerText(
       record.request_retry ?? record['request-retry'] ?? record.requestRetry
@@ -510,6 +517,10 @@ export const buildAuthFileConfigurationPatch = (
     tombstoneLegacyAliases(patch, record, ['excludedModels', 'excluded_models']);
   }
 
+  if (draft.allowExtraUsage !== originalDraft.allowExtraUsage) {
+    patch.allow_extra_usage =
+      draft.allowExtraUsage === 'inherit' ? null : draft.allowExtraUsage === 'on';
+  }
   if (draft.disableCooling !== originalDraft.disableCooling) {
     patch.disable_cooling = coolingPolicyToOverride(draft.disableCooling);
     tombstoneLegacyAliases(patch, record, ['disableCooling', 'disable-cooling']);

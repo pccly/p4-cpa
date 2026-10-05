@@ -45,6 +45,7 @@ const makeDraft = (
   note: '',
   headersText: '',
   excludedModelsText: '',
+  allowExtraUsage: 'inherit',
   disableCooling: 'inherit',
   requestRetry: '',
   websockets: false,

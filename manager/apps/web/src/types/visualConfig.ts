@@ -135,6 +135,7 @@ export type VisualConfigValues = {
   quotaSwitchPreviewModel: boolean;
   quotaAntigravityCredits: boolean;
   routingStrategy: 'round-robin' | 'weighted-round-robin' | 'fill-first' | 'reset-first';
+  allowExtraUsage: boolean;
   routingSessionAffinity: boolean;
   routingSessionAffinityTTL: string;
   wsAuth: boolean;
@@ -211,6 +212,7 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   quotaSwitchPreviewModel: false,
   quotaAntigravityCredits: false,
   routingStrategy: 'round-robin',
+  allowExtraUsage: false,
   routingSessionAffinity: false,
   routingSessionAffinityTTL: '',
   wsAuth: true,

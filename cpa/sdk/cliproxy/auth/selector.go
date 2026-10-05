@@ -799,6 +799,12 @@ func isAuthBlockedForModel(auth *Auth, model string, now time.Time) (bool, block
 	if auth.Disabled || auth.Status == StatusDisabled {
 		return true, blockReasonDisabled, time.Time{}
 	}
+	if blocked, until := subscriptionQuotaBlock(auth, model, now); blocked {
+		if until.IsZero() {
+			return true, blockReasonOther, until
+		}
+		return true, blockReasonCooldown, until
+	}
 	if hasUnauthorizedAuthFailure(auth) {
 		return true, blockReasonOther, time.Time{}
 	}

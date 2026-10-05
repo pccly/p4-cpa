@@ -350,6 +350,9 @@ type QuotaExceeded struct {
 
 // RoutingConfig configures how credentials are selected for requests.
 type RoutingConfig struct {
+	// AllowExtraUsage permits known exhausted Codex/Claude subscription credentials to keep routing.
+	AllowExtraUsage bool `yaml:"allow-extra-usage" json:"allow-extra-usage"`
+
 	// Strategy selects the credential selection strategy.
 	// Supported values: "round-robin" (default), "weighted-round-robin", "fill-first", "reset-first".
 	Strategy string `yaml:"strategy,omitempty" json:"strategy,omitempty"`

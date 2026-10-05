@@ -232,6 +232,13 @@ func (h *Handler) APICall(c *gin.Context) {
 		return
 	}
 
+	if c.GetBool(ConfigV8ContextKey) && auth != nil && h.authManager != nil && method == http.MethodGet && resp.StatusCode == http.StatusOK && tokenResolved && token != "" && req.Header.Get("Authorization") == "Bearer "+token && hostOverride == "" && resp.Request != nil && req.URL.String() == resp.Request.URL.String() &&
+		((auth.Provider == "codex" && urlStr == "https://chatgpt.com/backend-api/wham/usage" && codexQuotaProbeMatchesAccount(auth, req)) ||
+			(auth.Provider == "claude" && urlStr == "https://api.anthropic.com/api/oauth/usage")) {
+		if err := h.authManager.ObserveSubscriptionUsage(c.Request.Context(), auth, respBody); err != nil {
+			log.WithError(err).Warn("failed to persist subscription quota observation")
+		}
+	}
 	c.JSON(http.StatusOK, apiCallResponse{
 		StatusCode: resp.StatusCode,
 		Header:     resp.Header,
@@ -1016,4 +1023,11 @@ func buildProxyTransport(proxyStr string) *http.Transport {
 		return nil
 	}
 	return transport
+}
+
+// A Codex token can access multiple workspaces. Only apply the quota for the
+// credential's configured workspace, never another workspace selected by the caller.
+func codexQuotaProbeMatchesAccount(auth *coreauth.Auth, req *http.Request) bool {
+	accountID, _ := auth.Metadata["account_id"].(string)
+	return strings.TrimSpace(accountID) != "" && req.Header.Get("Chatgpt-Account-Id") == strings.TrimSpace(accountID)
 }

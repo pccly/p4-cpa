@@ -933,3 +933,29 @@ func TestV8SecretHashResolvesReferences(t *testing.T) {
 		})
 	}
 }
+
+func TestExtraUsageV8ConfigRoundTrip(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	data := []byte("config-version: 8\nrouting:\n  allow-extra-usage: true\n")
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Routing.AllowExtraUsage {
+		t.Fatal("extra usage did not reach runtime config")
+	}
+	cfg.Routing.AllowExtraUsage = false
+	if err := SaveConfigPreserveComments(path, cfg, true); err != nil {
+		t.Fatal(err)
+	}
+	restored, err := LoadConfig(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if restored.Routing.AllowExtraUsage {
+		t.Fatal("off was not persisted")
+	}
+}

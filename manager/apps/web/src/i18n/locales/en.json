@@ -1,4 +1,12 @@
 {
+  "extra_usage": {
+    "label": "Allow extra usage",
+    "global_hint": "Allow Codex and Claude credentials to use credits or paid extra usage after their subscription allowance is exhausted. Credentials can override this default.",
+    "credential_hint": "Overrides the global setting. Off skips this credential when its subscription allowance is known to be exhausted, until reset.",
+    "inherit": "Use global setting",
+    "on": "On",
+    "off": "Off"
+  },
   "manager_updates": {
     "fork_notice": "These releases are for the upstream manager. Update P4 CPA through its source tree and rebuild the local images; upstream packages do not include this rebrand.",
     "fork_guide": "P4 CPA upgrade guide",

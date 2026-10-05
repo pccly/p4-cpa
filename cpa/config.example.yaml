@@ -126,6 +126,7 @@ access:
 
 # Routing strategy for selecting credentials when multiple match.
 routing:
+  allow-extra-usage: false # Codex/Claude: allow credits or extra usage after subscription exhaustion.
   strategy: "round-robin" # round-robin (default), weighted-round-robin, fill-first, reset-first
   # weighted-round-robin uses each credential's integer weight (default 1, maximum 1,000,000).
   # Non-positive weights exclude the credential while this strategy is active.

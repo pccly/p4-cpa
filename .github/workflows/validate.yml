@@ -36,6 +36,8 @@ jobs:
           cache-dependency-path: cpa/go.sum
       - run: go test ./sdk/cliproxy/auth ./sdk/cliproxy
         working-directory: cpa
+      - run: go test ./internal/runtime/executor -run '^TestClaudeExecutor_DeferredToolSearchRoundTrip$' -count=1
+        working-directory: cpa
       - run: go build ./cmd/server
         working-directory: cpa
   manager:

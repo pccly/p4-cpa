@@ -31,6 +31,10 @@ manager's OAuth Login or AI Providers page. No provider accounts are bundled.
 Use `CPA_CLIENT_KEY` from `.env` in API clients with base URL
 `http://127.0.0.1:8317/v1`. An empty installation has no available models.
 
+For Claude Code and P4Code Claude sessions, see
+[Claude MCP tool search](docs/claude-tool-search.md). Custom proxy endpoints
+require an explicit client opt-in to defer unused MCP tool definitions.
+
 ```sh
 docker compose ps
 ./scripts/verify.sh

@@ -32,7 +32,9 @@ func subscriptionWindowApplies(key, model string) bool {
 	case "claude-7d-sonnet":
 		return strings.Contains(model, "sonnet")
 	case "claude-7d-opus":
-		return strings.Contains(model, "opus") || strings.Contains(model, "fable")
+		return strings.Contains(model, "opus")
+	case "claude-7d-fable":
+		return strings.Contains(model, "fable")
 	}
 	return false
 }
@@ -153,7 +155,7 @@ func subscriptionWindowsFromHeaders(provider string, headers http.Header, now ti
 		}
 	case "claude":
 		for _, window := range []struct{ header, key string }{
-			{"5h", "5h"}, {"7d", "7d"}, {"7d-sonnet", "7d-sonnet"}, {"7d-opus", "7d-opus"}, {"7d_oi", "7d-opus"},
+			{"5h", "5h"}, {"7d", "7d"}, {"7d-sonnet", "7d-sonnet"}, {"7d-opus", "7d-opus"}, {"7d_oi", "7d-fable"},
 		} {
 			prefix := "Anthropic-Ratelimit-Unified-" + window.header + "-"
 			addSubscriptionWindow(windows, "claude-"+window.key, headers.Get(prefix+"Utilization"), 1,
@@ -202,6 +204,11 @@ func (m *Manager) ObserveSubscriptionUsage(ctx context.Context, credential *Auth
 	if len(windows) == 0 {
 		return nil
 	}
+	releaseMutation, errMutation := m.lockAuthMutationContext(ctx, credential.ID)
+	if errMutation != nil {
+		return errMutation
+	}
+	defer releaseMutation()
 	m.mu.Lock()
 	current := m.auths[credential.ID]
 	if current == nil || current.RegistrationEpoch != credential.RegistrationEpoch {
@@ -211,9 +218,10 @@ func (m *Manager) ObserveSubscriptionUsage(ctx context.Context, credential *Auth
 	// A probe started before a newer request must not reopen its exhaustion.
 	recordSubscriptionWindows(current, windows, now, current.Generation == credential.Generation)
 	current.Generation++
-	err := m.persist(ctx, current)
+	err := m.persistLocked(ctx, current)
 	snapshot := current.Clone()
 	m.mu.Unlock()
+	releaseMutation()
 	if m.scheduler != nil {
 		m.scheduler.upsertAuth(snapshot)
 	}

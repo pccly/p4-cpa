@@ -1,6 +1,7 @@
 package codex
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strings"
 	"unicode"
@@ -10,9 +11,16 @@ import (
 // The account hash is included when available to keep accounts with the same email
 // and plan distinct. The legacy email-based format remains the fallback.
 func CredentialFileName(email, planType, hashAccountID string, includeProviderPrefix bool) string {
+	// Preserve existing safe filenames; hash identities containing path syntax.
 	email = strings.TrimSpace(email)
+	if strings.ContainsAny(email, "/\\:\x00") {
+		email = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
+	}
 	plan := normalizePlanTypeForFilename(planType)
 	hashAccountID = strings.TrimSpace(hashAccountID)
+	if strings.ContainsAny(hashAccountID, "/\\:\x00") {
+		hashAccountID = fmt.Sprintf("%x", sha256.Sum256([]byte(hashAccountID)))
+	}
 
 	prefix := ""
 	if includeProviderPrefix {

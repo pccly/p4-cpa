@@ -93,6 +93,7 @@ func TestFileRequestLogger_HomeEnabled_ForwardsWhenRequestLogEnabled(t *testing.
 	requestHeaders := map[string][]string{
 		"Content-Type":  {"application/json"},
 		"Authorization": {"Bearer secret"},
+		"Cookie":        {"session=private-cookie"},
 	}
 
 	errLog := logger.LogRequest(
@@ -139,8 +140,17 @@ func TestFileRequestLogger_HomeEnabled_ForwardsWhenRequestLogEnabled(t *testing.
 	if got.Headers == nil || got.Headers["Content-Type"][0] != "application/json" {
 		t.Fatalf("headers.content-type = %+v, want application/json", got.Headers["Content-Type"])
 	}
-	if got.Headers == nil || got.Headers["Authorization"][0] != "Bearer secret" {
-		t.Fatalf("headers.authorization = %+v, want Bearer secret", got.Headers["Authorization"])
+	if got.Headers == nil || got.Headers["Authorization"][0] == "Bearer secret" {
+		t.Fatal("Home log payload contains the unmasked Authorization header")
+	}
+	if got.Headers["Cookie"][0] != "[REDACTED]" {
+		t.Fatal("Home log payload contains an unmasked session cookie")
+	}
+	if bytes.Contains(stub.pushed[0], []byte("private-cookie")) || bytes.Contains(stub.pushed[0], []byte("Bearer secret")) {
+		t.Fatal("Home log payload contains raw credentials in its text or headers")
+	}
+	if requestHeaders["Authorization"][0] != "Bearer secret" || requestHeaders["Cookie"][0] != "session=private-cookie" {
+		t.Fatal("logging changed the original request headers")
 	}
 	if got.RequestID != "req-1" {
 		t.Fatalf("request_id = %q, want req-1", got.RequestID)

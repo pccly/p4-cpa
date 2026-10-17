@@ -1,6 +1,6 @@
 # P4 CPA
 
-P4 CLI Proxy API, a private proxy and management stack with its own **1.0.0** release line.
+P4 CLI Proxy API, a private proxy and management stack at version **1.0.1**, with its own release line.
 The proxy core handles model traffic; P4 CPA provides management and persistent usage history.
 Docker builds `p4-cpa/cpa:local` and `p4-cpa/manager:local`.
 See [upstream provenance](docs/upstream.md) for the imported baseline and attribution.

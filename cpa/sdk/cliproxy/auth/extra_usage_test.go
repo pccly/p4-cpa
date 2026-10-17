@@ -47,8 +47,8 @@ func TestExtraUsageObservationsPersistAndRemainScoped(t *testing.T) {
 	now := time.Now()
 	a := &Auth{Provider: "claude"}
 	recordSubscriptionWindows(a, subscriptionWindowsFromHeaders("claude", http.Header{
-		"Anthropic-Ratelimit-Unified-7d_oi-Utilization": {"1"},
-		"Anthropic-Ratelimit-Unified-7d_oi-Reset":       {strconv.FormatInt(now.Add(time.Hour).Unix(), 10)},
+		"Anthropic-Ratelimit-Unified-7d-Opus-Utilization": {"1"},
+		"Anthropic-Ratelimit-Unified-7d-Opus-Reset":       {strconv.FormatInt(now.Add(time.Hour).Unix(), 10)},
 	}, now), now, false)
 	// Simulate an auth file round trip and an unrelated partial response.
 	encoded, err := json.Marshal(a.Metadata)
@@ -66,7 +66,7 @@ func TestExtraUsageObservationsPersistAndRemainScoped(t *testing.T) {
 	if blocked, _ := subscriptionQuotaBlock(b, "claude-sonnet-4-6", now); blocked {
 		t.Fatal("opus limit blocked sonnet")
 	}
-	recordSubscriptionWindows(b, subscriptionWindowsFromHeaders("claude", http.Header{"Anthropic-Ratelimit-Unified-7d_oi-Utilization": {"0.2"}}, now), now, false)
+	recordSubscriptionWindows(b, subscriptionWindowsFromHeaders("claude", http.Header{"Anthropic-Ratelimit-Unified-7d-Opus-Utilization": {"0.2"}}, now), now, false)
 	if blocked, _ := subscriptionQuotaBlock(b, "claude-opus-4-6", now); !blocked {
 		t.Fatal("late response reopened exhausted allowance")
 	}
@@ -200,5 +200,22 @@ func TestExtraUsageResetQuotaClearsSubscriptionBlock(t *testing.T) {
 	updated, _ := m.GetByID(a.ID)
 	if blocked, _ := subscriptionQuotaBlock(updated, "gpt-5", time.Now()); blocked {
 		t.Fatal("reset quota kept subscription block")
+	}
+}
+
+func TestExtraUsageFableWindowDoesNotBlockOpus(t *testing.T) {
+	now := time.Unix(1800000000, 0)
+	a := &Auth{Provider: "claude"}
+	headers := make(http.Header)
+	headers.Set("Anthropic-Ratelimit-Unified-7d_oi-Utilization", "1.02")
+	headers.Set("Anthropic-Ratelimit-Unified-7d_oi-Reset", strconv.FormatInt(now.Add(time.Hour).Unix(), 10))
+	recordSubscriptionWindows(a, subscriptionWindowsFromHeaders("claude", headers, now), now, false)
+	for _, model := range []string{"claude-opus-5", "claude-sonnet-4-6"} {
+		if blocked, _ := subscriptionQuotaBlock(a, model, now); blocked {
+			t.Fatalf("Fable-only exhaustion blocked %s", model)
+		}
+	}
+	if blocked, _ := subscriptionQuotaBlock(a, "claude-fable-5-1", now); !blocked {
+		t.Fatal("Fable exhaustion was not retained")
 	}
 }

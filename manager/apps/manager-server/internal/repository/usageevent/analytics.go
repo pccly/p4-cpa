@@ -2520,6 +2520,9 @@ func (r *repository) RecentFailuresWithFilter(ctx context.Context, filter Analyt
 	if limit <= 0 {
 		return nil, nil
 	}
+	if limit > maxAnalyticsResultLimit {
+		limit = maxAnalyticsResultLimit
+	}
 	filter.IncludeFailed = true
 	where, args := analyticsWhere(filter)
 	args = append(args, limit)

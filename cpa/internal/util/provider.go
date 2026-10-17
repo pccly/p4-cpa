@@ -214,6 +214,7 @@ func MaskAuthorizationHeader(value string) string {
 // MaskSensitiveHeaderValue masks sensitive header values while preserving expected formats.
 //
 // Behavior by header key (case-insensitive):
+//   - "Cookie" and "Set-Cookie": Redact the entire value.
 //   - "Authorization": Preserve the auth type prefix (e.g., "Bearer ") and mask only the credential part.
 //   - Headers containing "api-key": Mask the entire value using HideAPIKey.
 //   - Others: Return the original value unchanged.
@@ -227,6 +228,8 @@ func MaskAuthorizationHeader(value string) string {
 func MaskSensitiveHeaderValue(key, value string) string {
 	lowerKey := strings.ToLower(strings.TrimSpace(key))
 	switch {
+	case lowerKey == "cookie", lowerKey == "set-cookie":
+		return "[REDACTED]"
 	case strings.Contains(lowerKey, "authorization"):
 		return MaskAuthorizationHeader(value)
 	case strings.Contains(lowerKey, "api-key"),
@@ -283,7 +286,9 @@ func shouldMaskQueryParam(key string) bool {
 		return false
 	}
 	key = strings.TrimSuffix(key, "[]")
-	if key == "key" || strings.Contains(key, "api-key") || strings.Contains(key, "apikey") || strings.Contains(key, "api_key") {
+	// The management API deletes a client API key by ?value=<key>, so a plain
+	// "value" parameter can carry a full secret into the request log.
+	if key == "key" || key == "value" || strings.Contains(key, "api-key") || strings.Contains(key, "apikey") || strings.Contains(key, "api_key") {
 		return true
 	}
 	if strings.Contains(key, "token") || strings.Contains(key, "secret") {

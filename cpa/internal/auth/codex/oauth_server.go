@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"html"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -39,6 +41,8 @@ type OAuthResult struct {
 	Code string
 	// State is the state parameter used to prevent CSRF attacks
 	State string
+	// ClientID is the dynamically issued client ID returned by Sign in with ChatGPT
+	ClientID string
 	// Error contains any error message if the OAuth flow failed
 	Error string
 }
@@ -175,6 +179,7 @@ func (s *OAuthServer) handleCallback(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	code := query.Get("code")
 	state := query.Get("state")
+	clientID := strings.TrimSpace(query.Get("client_id"))
 	errorParam := query.Get("error")
 
 	// Validate required parameters
@@ -210,8 +215,9 @@ func (s *OAuthServer) handleCallback(w http.ResponseWriter, r *http.Request) {
 
 	// Send successful result
 	result := &OAuthResult{
-		Code:  code,
-		State: state,
+		Code:     code,
+		State:    state,
+		ClientID: clientID,
 	}
 	s.sendResult(result)
 
@@ -259,20 +265,27 @@ func (s *OAuthServer) handleSuccess(w http.ResponseWriter, r *http.Request) {
 // Returns:
 //   - string: The HTML content for the success page
 func (s *OAuthServer) generateSuccessHTML(setupRequired bool, platformURL string) string {
-	html := LoginSuccessHtml
+	// Reject executable URL schemes and escape the quoted HTML attribute.
+	parsed, err := url.Parse(platformURL)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "https" && parsed.Scheme != "http") {
+		platformURL = "https://platform.openai.com"
+	}
+	platformURL = html.EscapeString(platformURL)
+
+	pageHTML := LoginSuccessHtml
 
 	// Replace platform URL placeholder
-	html = strings.Replace(html, "{{PLATFORM_URL}}", platformURL, -1)
+	pageHTML = strings.Replace(pageHTML, "{{PLATFORM_URL}}", platformURL, -1)
 
 	// Add setup notice if required
 	if setupRequired {
 		setupNotice := strings.Replace(SetupNoticeHtml, "{{PLATFORM_URL}}", platformURL, -1)
-		html = strings.Replace(html, "{{SETUP_NOTICE}}", setupNotice, 1)
+		pageHTML = strings.Replace(pageHTML, "{{SETUP_NOTICE}}", setupNotice, 1)
 	} else {
-		html = strings.Replace(html, "{{SETUP_NOTICE}}", "", 1)
+		pageHTML = strings.Replace(pageHTML, "{{SETUP_NOTICE}}", "", 1)
 	}
 
-	return html
+	return pageHTML
 }
 
 // sendResult sends the OAuth result to the waiting channel.

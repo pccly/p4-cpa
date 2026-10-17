@@ -2,6 +2,7 @@ package usageevent
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -9,6 +10,62 @@ import (
 	sqliterepo "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/repository/sqlite"
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/usage"
 )
+
+func TestAnalyticsResultLimits(t *testing.T) {
+	db, err := sqliterepo.Open(filepath.Join(t.TempDir(), "usage.sqlite"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	repo := New(db)
+	ctx := context.Background()
+	events := make([]usage.Event, maxAnalyticsResultLimit+1)
+	for i := range events {
+		events[i] = usage.Event{
+			EventHash:   canonicalTestHash(fmt.Sprintf("limit-%d", i)),
+			TimestampMS: 1000, Model: fmt.Sprintf("model-%d", i), Failed: true,
+		}
+	}
+	if _, err := repo.InsertBatch(ctx, events); err != nil {
+		t.Fatal(err)
+	}
+	queries := []struct {
+		name         string
+		query        func(int) (int, error)
+		defaultCount int
+	}{
+		{"top models", func(limit int) (int, error) {
+			rows, err := repo.TopModelsBetween(ctx, 0, 2000, limit)
+			return len(rows), err
+		}, 5},
+		{"recent failures", func(limit int) (int, error) {
+			rows, err := repo.RecentFailuresBetween(ctx, 0, 2000, limit)
+			return len(rows), err
+		}, 5},
+		{"filtered failures", func(limit int) (int, error) {
+			rows, err := repo.RecentFailuresWithFilter(ctx, AnalyticsFilter{FromMS: 0, ToMS: 2000}, limit)
+			return len(rows), err
+		}, 0},
+	}
+	for _, query := range queries {
+		t.Run(query.name, func(t *testing.T) {
+			for _, limit := range []int{-1, 0, 2, maxAnalyticsResultLimit, maxAnalyticsResultLimit + 1, int(^uint(0) >> 1)} {
+				t.Run(fmt.Sprint(limit), func(t *testing.T) {
+					want := limit
+					if limit <= 0 {
+						want = query.defaultCount
+					} else if limit > maxAnalyticsResultLimit {
+						want = maxAnalyticsResultLimit
+					}
+					got, err := query.query(limit)
+					if err != nil || got != want {
+						t.Fatalf("got %d rows, %v; want %d rows", got, err, want)
+					}
+				})
+			}
+		})
+	}
+}
 
 func TestRecentFailuresHideHistoricalCodexProjectMarker(t *testing.T) {
 	db, err := sqliterepo.Open(filepath.Join(t.TempDir(), "usage.sqlite"))

@@ -10,6 +10,9 @@ import (
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/usageidentity"
 )
 
+// Dashboard and monitoring lists must not allocate directly from request limits.
+const maxAnalyticsResultLimit = 1000
+
 var (
 	requestedModelExpr = usageidentity.SQLEffectiveRequestedModelExpression("model", "requested_model")
 	analyticsModelExpr = usageidentity.SQLRequestAnalyticsModelExpression("model", "requested_model")
@@ -211,6 +214,9 @@ func (r *repository) TopModelsBetween(ctx context.Context, fromMs, toMs int64, l
 	if limit <= 0 {
 		limit = 5
 	}
+	if limit > maxAnalyticsResultLimit {
+		limit = maxAnalyticsResultLimit
+	}
 	rows, err := r.db.QueryContext(ctx, topModelsSQL, fromMs, toMs, limit)
 	if err != nil {
 		return nil, err
@@ -344,6 +350,9 @@ limit ?`
 func (r *repository) RecentFailuresBetween(ctx context.Context, fromMs, toMs int64, limit int) ([]RecentFailure, error) {
 	if limit <= 0 {
 		limit = 5
+	}
+	if limit > maxAnalyticsResultLimit {
+		limit = maxAnalyticsResultLimit
 	}
 	rows, err := r.db.QueryContext(ctx, recentFailuresSQL, fromMs, toMs, limit)
 	if err != nil {

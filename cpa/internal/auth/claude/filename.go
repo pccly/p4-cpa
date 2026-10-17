@@ -18,7 +18,11 @@ import (
 // distinct. The account hash is used when no organization is available, and the
 // legacy email-based format remains the fallback.
 func CredentialFileName(email, organizationUUID, accountUUID string) string {
+	// Preserve existing safe filenames; hash identities containing path syntax.
 	email = strings.TrimSpace(email)
+	if strings.ContainsAny(email, "/\\:\x00") {
+		email = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
+	}
 	identity := strings.TrimSpace(organizationUUID)
 	if identity == "" {
 		identity = strings.TrimSpace(accountUUID)

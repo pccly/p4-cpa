@@ -16,6 +16,7 @@ import (
 	"github.com/router-for-me/CLIProxyAPI/v8/internal/util"
 	cliproxyauth "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth"
 	cliproxyexecutor "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor"
+	"github.com/router-for-me/CLIProxyAPI/v8/sdk/proxyutil"
 	sdktranslator "github.com/router-for-me/CLIProxyAPI/v8/sdk/translator"
 	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
@@ -310,7 +311,7 @@ func xaiBaseURLSource(baseURL string) string {
 
 // logXAIResolvedBaseURL emits a console log for the resolved upstream base URL.
 func logXAIResolvedBaseURL(ctx context.Context, baseURL string) {
-	helps.LogWithRequestID(ctx).Infof("xai: using base_url=%s source=%s", baseURL, xaiBaseURLSource(baseURL))
+	helps.LogWithRequestID(ctx).Infof("xai: using base_url=%s source=%s", proxyutil.Redact(baseURL), xaiBaseURLSource(baseURL))
 }
 
 func applyXAIHeaders(r *http.Request, auth *cliproxyauth.Auth, token string, stream bool, sessionID string, clientHeaders ...http.Header) {

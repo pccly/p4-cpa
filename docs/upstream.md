@@ -17,6 +17,31 @@ reference, and deliberate future integration. Their release numbers are provenan
 not P4 CPA product versions. The `cpa-upstream` and `manager-upstream` remotes and
 `scripts/sync-upstream.sh` are optional maintenance tools, not release authorities.
 
+## P4 CPA 1.0.1 integration
+
+Version **1.0.1** integrates CLIProxyAPI **v8.0.32**
+(`911f49cbd49f4fe2516979754a7488a3fd14fe64`) and CPA Manager Plus **v1.14.7**
+(`64ce94e6aa1af691555429a3211e67c59c0480ad`). The original import baselines above
+remain the historical provenance. Use these new source commits as the comparison
+base for the next upstream integration.
+
+This update includes credential refresh and cooldown concurrency fixes, Claude
+MCP tool handling and prompt-cache fixes, config reload/write concurrency guards,
+quota reset reconciliation, retained usage-history checks, corrected cache-token
+accounting, and background refresh improvements. P4's reset-first routing,
+extra-usage controls, HTTP-default Codex transport, branding, settings layout,
+and disabled upstream update polling remain in place. The unused historical
+`cpa/assets/aiberm.png` asset is retained.
+
+Before deployment, take a consistent backup of the persistent database and archives.
+Manager automatically corrects eligible historical accounting on restart, which
+can change usage and cost rollups. Validate this against a database copy without
+starting a second stack against the shared provider accounts. The new latency
+covering index uses deferred offline maintenance on existing non-empty databases;
+its absence postpones the performance benefit but does not block correctness
+fixes or startup. Follow the stopped-service maintenance procedure in
+[hosting.md](hosting.md). No database maintenance runs as part of source integration.
+
 ## Independent releases
 
 P4 CPA no longer displays upstream release links, latest-version badges, or update

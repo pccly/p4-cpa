@@ -151,6 +151,7 @@ export type VisualConfigValues = {
   codexHeaderUserAgent: string;
   codexHeaderBetaFeatures: string;
   codexIdentityConfuse: boolean;
+  codexIdentityConfuseSupported: boolean;
   devinSensitiveWords: string[];
   payloadDefaultRules: PayloadRule[];
   payloadDefaultRawRules: PayloadRule[];
@@ -228,6 +229,7 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   codexHeaderUserAgent: '',
   codexHeaderBetaFeatures: '',
   codexIdentityConfuse: false,
+  codexIdentityConfuseSupported: true,
   devinSensitiveWords: [],
   payloadDefaultRules: [],
   payloadDefaultRawRules: [],

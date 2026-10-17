@@ -30,6 +30,7 @@ async function render(appVersion = '1.0.0', apiVersion = '1.0.0') {
           collectorLoading={false}
           errorLogCount={0}
           errorLogsLoading={false}
+          errorLogsLoaded={true}
         />
       </MemoryRouter>
     );

@@ -1013,7 +1013,7 @@ func intModelValue(model map[string]any, key string) int {
 	case int:
 		return value
 	case int64:
-		if int64(int(value)) != value {
+		if value < math.MinInt || value > math.MaxInt {
 			return 0
 		}
 		return int(value)

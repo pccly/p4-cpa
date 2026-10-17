@@ -14,6 +14,8 @@ func TestIntModelValueBounds(t *testing.T) {
 		want  int
 	}{
 		{"normal integer", int64(128000), 128000},
+		{"maximum integer", int64(math.MaxInt), math.MaxInt},
+		{"minimum integer", int64(math.MinInt), math.MinInt},
 		{"normal JSON number", float64(128000), 128000},
 		{"nan", math.NaN(), 0},
 		{"positive infinity", math.Inf(1), 0},

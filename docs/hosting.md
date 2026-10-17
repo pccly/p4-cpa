@@ -200,7 +200,17 @@ wildcard also resolves to the mini's tailnet address. Caddy routes the shared po
 TLS server name (the layer4 plugin): `HTTPS_HOST` terminates in Caddy, and every other
 name passes through still encrypted to `HTTPS_PASSTHROUGH_UPSTREAM`
 (`host.docker.internal:443`, Nginx Proxy Manager, by default), so those services keep
-their own certificates. Check one after a change:
+their own certificates.
+
+On the primary mini, Tailscale also binds host port 443, so Nginx Proxy Manager
+publishes an additional `127.0.0.1:19444:443` mapping in
+`/Users/po/docker/npm/compose.yml`. The production `.env` sets
+`HTTPS_PASSTHROUGH_UPSTREAM=host.docker.internal:19444` to avoid that conflict.
+Keep this loopback mapping when recreating Nginx Proxy Manager. Verify its route
+directly with port 19444 if other private hostnames stop responding while CPA
+continues to work.
+
+Check another private hostname after a change:
 
 ```sh
 curl --resolve vault.home.ccly.dev:19443:127.0.0.1 \

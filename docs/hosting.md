@@ -226,7 +226,8 @@ connection the Studio opens to its own tailnet address on 443 (curl reports
 loopback instead: inference `http://127.0.0.1:8317` (`/v1` for OpenAI-style clients)
 and management `http://127.0.0.1:18317`. The Studio's P4 Code provider instances
 `claude_cpa` and `codex_cpa` use these. Restart the P4 Code service after editing
-their URLs in `settings.json` by hand; a running session keeps the old environment.
+their URLs in `settings.json` by hand; on 2026-11-01 new provider sessions kept
+the old URL until the restart.
 
 Use `https://cpa.home.ccly.dev/management.html` for the manager and
 `https://cpa.home.ccly.dev/v1` for clients. `/v1/*` and `/v1beta/*` go to CPA with

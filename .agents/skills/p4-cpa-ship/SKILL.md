@@ -1,6 +1,6 @@
 ---
 name: p4-cpa-ship
-description: Merge and deploy p4-cpa to its primary Mac mini, or inspect and recover its automatic deployment. Use for shipping this repository, not other projects or upstream subtree publication.
+description: Merge and deploy p4-cpa to its Mac Studio host, or inspect and recover its automatic deployment. Use for shipping this repository, not other projects or upstream subtree publication.
 ---
 
 # Ship P4 CPA
@@ -16,19 +16,19 @@ Read the global ship skill for commit and merge rules, then `docs/hosting.md` fo
 
 ## Deploy
 
-The primary host is the Mac mini at 100.92.118.42. Confirm SSH identity and production checkout path from the current host before mutation; do not assume development host paths or copy secrets to find access.
+The only host is the Mac Studio at 100.67.215.33 (SSH alias `p4-studio`, checkout `~/code/p4-cpa`); the Mac mini no longer runs this stack. Confirm SSH identity and production checkout path from the current host before mutation; do not assume development host paths or copy secrets to find access.
 
-The mini polls origin/main every 300 seconds with `codes.p4.cpa.autodeploy`. It requires a clean main checkout, authenticated Git and `gh` read access to this private repo, a running primary stack, and successful `validate.yml` push CI for the exact target.
+When installed, `codes.p4.cpa.autodeploy` polls origin/main every 300 seconds; check `launchctl print` first, and if it is absent, deploy with `scripts/auto-deploy.sh`. It requires a clean main checkout, authenticated Git and `gh` read access to this private repo, a running primary stack, and successful `validate.yml` push CI for the exact target.
 
 - Inspect `launchctl print gui/$(id -u)/codes.p4.cpa.autodeploy`, `.artifacts/deployment.json`, and `~/Library/Logs/p4-cpa/autodeploy.log` over SSH.
 - To deploy now, run `scripts/auto-deploy.sh` in the production checkout. It shares the backup/start lock, retains a cold backup, fast-forwards to the pinned SHA, builds, starts with health checks, verifies authentication and connectivity, and checks runtime image revision labels.
-- First installation: merge and wait for CI, retain a cold backup before changing the production checkout (including bind-mounted configuration), fast-forward the clean production checkout to that SHA, then run `scripts/auto-deploy.sh`. After healthy verification, install the poller with `scripts/install-launchd.sh --install --auto-deploy --runtime orbstack`. Capture the actual working PATH and Docker context. Never install it on the Studio standby.
+- First installation: merge and wait for CI, retain a cold backup before changing the production checkout (including bind-mounted configuration), fast-forward the clean production checkout to that SHA, then run `scripts/auto-deploy.sh`. After healthy verification, install the poller with `scripts/install-launchd.sh --install --auto-deploy --runtime orbstack`. Capture the actual working PATH and Docker context.
 - Re-run the installer after changes to its plist, checkout path, Docker context, or executable paths. Normal polls never change the installed job.
 - Failed or interrupted deployment pauses subsequent polls, including newer commits. Inspect the failure and preserve its matched backup. Only after the cause is resolved, run `P4_CPA_DEPLOY_RETRY=1 scripts/auto-deploy.sh` once. Never automatically restore or downgrade a migrated database.
-- Backup archives are retained; deletion requires a separate authorized retention operation. Login and an awake mini remain required.
+- Backup archives are retained; deletion requires a separate authorized retention operation. Login and an awake Studio remain required.
 
 ## Verify and report
 
-Require `.artifacts/deployment.json` status healthy at the merge SHA, healthy Compose services, and `scripts/verify.sh` success. Check public-facing private HTTPS separately: management.html returns 200, unauthenticated /v1/models returns 401, and an unrelated shared SNI hostname still works. Never print Compose's resolved secrets.
+Require `.artifacts/deployment.json` status healthy at the merge SHA, healthy Compose services, and `scripts/verify.sh` success. Check public-facing private HTTPS separately: management.html returns 200, unauthenticated /v1/models returns 401, and `https://macstudio.tailfb37f4.ts.net/` (P4 Code on the shared port) still works. Never print Compose's resolved secrets.
 
 Use Computer Use to verify changed behavior on the deployed manager. Keep proof images in the conversation, never GitHub unless asked. Report the PR URL, deployed SHA, and poller status. If SSH or CI access is missing, finish the reviewable code and report that deployment is blocked rather than claiming it ran.

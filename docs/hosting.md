@@ -205,9 +205,13 @@ repository Caddyfile:
 - `.env` sets `COMPOSE_FILE=docker-compose.yml:data/compose.studio.yml`. That overlay
   mounts `data/caddy-studio/Caddyfile` over `/etc/caddy/Caddyfile` and the ts.net
   certificate directory `data/ts-certs`.
-- `data/caddy-studio/Caddyfile` sends `cpa.home.ccly.dev` to CPA and
-  `macstudio.tailfb37f4.ts.net` to P4 Code on `host.docker.internal:3773`. It has no
-  passthrough route, so `HTTPS_PASSTHROUGH_UPSTREAM` is unused there.
+- `data/caddy-studio/Caddyfile` sends `cpa.home.ccly.dev` to CPA, and both
+  `macstudio.tailfb37f4.ts.net` and `p4code.local` to P4 Code on
+  `host.docker.internal:3773`. It has no passthrough route, so
+  `HTTPS_PASSTHROUGH_UPSTREAM` is unused there.
+- `p4code.local` uses Caddy's own local CA (`tls internal`, root at
+  `data/caddy/caddy/pki/authorities/local/root.crt`). It works only on machines with
+  a hosts entry for the Studio's tailnet addresses and that root trusted for SSL.
 - The ts.net certificate comes from `tailscale cert`, renewed daily by the
   `codes.p4.cpa.tscert` LaunchAgent running `data/caddy-studio/renew-tscert.sh`, which
   retries until Tailscale is connected and then reloads Caddy when the certificate changed.

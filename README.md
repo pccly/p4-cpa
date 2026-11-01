@@ -5,8 +5,8 @@ The proxy core handles model traffic; P4 CPA provides management and persistent 
 Docker builds `p4-cpa/cpa:local` and `p4-cpa/manager:local`.
 See [upstream provenance](docs/upstream.md) for the imported baseline and attribution.
 
-For the always-on Mac mini setup, private HTTPS, backups, upgrades, and manual
-Studio failover, see [Hosting and operations](docs/hosting.md).
+For the Mac Studio host setup, private HTTPS, backups, upgrades, and moving
+to another host, see [Hosting and operations](docs/hosting.md).
 For `https://cpa.home.ccly.dev`, use the optional
 [custom hostname profile](docs/hosting.md#custom-hostname-with-private-https).
 

@@ -2,16 +2,15 @@
 
 ## Recommended host
 
-Use the already-on **Mac mini as primary**. This stack forwards requests to remote
-providers; it does not run model inference locally. Keeping it on a dedicated,
-always-on machine avoids development reboots and adds little work compared with
-local model inference. Actual CPU, RAM, disk growth and power use depend on traffic;
-measure those on the mini instead of assuming a particular wattage.
+The **Mac Studio is the primary and only host** (`MacStudio`, tailnet `100.67.215.33`,
+checkout `~/code/p4-cpa`). The Mac mini no longer runs this stack; its last backup
+before the move is dated 2026-10-26. This stack forwards requests to remote
+providers; it does not run model inference locally. Actual CPU, RAM, disk growth
+and power use depend on traffic; measure those on the Studio instead of assuming
+a particular wattage.
 
-Keep the **Mac Studio as optional warm standby**: source and images can be ready,
-but its stack and startup job should stay stopped. Use it for builds or heavier
-workloads if measurements justify that. Never run both hosts against the same
-provider accounts concurrently. There is no automatic failover or shared database.
+Never run a second instance against the same provider accounts. There is no
+standby, automatic failover or shared database.
 
 Public cloud adds cost and moves provider credentials onto another host without
 solving a present need. Public internet exposure adds an unnecessary attack surface.
@@ -30,8 +29,8 @@ connecting accounts. That decision belongs to the account owner.
 
 Recommend **OrbStack** for this setup: it is already installed on the verification
 Mac, its Docker context is `orbstack`, and both source builds passed there. On
-2026-10-02, `orb config list` reported `app.start_at_login: false`; no setting was
-changed. The mini's installation and settings have not been inspected.
+2026-11-01 the Studio reported `app.start_at_login: true`, and `pmset` showed
+`autorestart 1` and `sleep 0`.
 [OrbStack supports command-line startup with `orb start`](https://docs.orbstack.dev/headless).
 Check its license for your use. **Colima** is an alternative if you prefer its
 open-source runtime; **Docker Desktop** also works if you already use it. Choose
@@ -39,7 +38,7 @@ one engine and verify `docker context show`; do not alternate engines accidental
 See [Colima's FAQ](https://github.com/abiosoft/colima/blob/main/docs/FAQ.md) and
 [Docker Desktop startup settings](https://docs.docker.com/desktop/settings-and-maintenance/settings/).
 
-On the mini, clone this repo, run `scripts/init.sh`, build, start, and verify as in
+On the Studio, clone this repo, run `scripts/init.sh`, build, start, and verify as in
 the README. Then render LaunchAgents without installing them:
 
 ```sh
@@ -47,7 +46,7 @@ the README. Then render LaunchAgents without installing them:
 plutil -lint .artifacts/launchd/*.plist
 ```
 
-Inspect the rendered paths, Docker context, and PATH before installing **on the mini**:
+Inspect the rendered paths, Docker context, and PATH before installing **on the Studio**:
 
 ```sh
 ./scripts/install-launchd.sh --install --runtime orbstack
@@ -70,7 +69,7 @@ these host logs periodically. Docker log rotation is configured separately.
 
 **Login is required.** These jobs do not guarantee startup before the user's login
 session or before FileVault disk unlock. Keep FileVault enabled, plan for a person
-to unlock after cold boot, and test an actual mini reboot before relying on it.
+to unlock after cold boot, and test an actual Studio reboot before relying on it.
 In macOS power settings, prevent system sleep during service and enable restart
 after power failure where supported; the display can sleep. Consider a UPS.
 `restart: unless-stopped` restarts containers with the engine, but needs that engine
@@ -89,14 +88,13 @@ docker compose down
 ```
 
 `bootout` unloads for this login session; the plist still loads next login. To keep
-a standby disabled across logins, use `launchctl disable` for both labels. Reverse
-with `launchctl enable` before reinstalling/loading. Do not install startup jobs on
-standby unless you have deliberately disabled them.
+an installation disabled across logins, use `launchctl disable` for both labels.
+Reverse with `launchctl enable` before reinstalling/loading.
 
 ## Tailnet-only HTTPS
 
 Keep `BIND_IP=127.0.0.1` and `OAUTH_BIND_IP=127.0.0.1` in `.env` when using Serve.
-Enable MagicDNS and HTTPS for your tailnet, sign in on the mini, and inspect existing
+Enable MagicDNS and HTTPS for your tailnet, sign in on the host, and inspect existing
 Serve configuration before changing ports. Reserve unused HTTPS ports for this stack:
 
 ```sh
@@ -107,8 +105,11 @@ tailscale serve status
 ```
 
 Use the exact hostname printed by Serve: manager at
-`https://<mini>.<tailnet>.ts.net/management.html`, inference base at
-`https://<mini>.<tailnet>.ts.net:8443/v1`. Retain the manager admin and inference
+`https://<host>.<tailnet>.ts.net/management.html`, inference base at
+`https://<host>.<tailnet>.ts.net:8443/v1`. On the Studio, 443 and 8443 are taken
+(see [Studio port sharing](#studio-port-sharing)), so its ts.net mappings are
+manager `https://macstudio.tailfb37f4.ts.net:8446` (`127.0.0.1:18317`) and inference
+`https://macstudio.tailfb37f4.ts.net:8445/v1` (`127.0.0.1:8317`). Retain the manager admin and inference
 client keys. Limit access in tailnet grants/ACLs to the people/devices that need it.
 Serve background configuration persists; it still depends on Tailscale and the
 local services running. Undo only these mappings:
@@ -121,10 +122,9 @@ tailscale serve --https=8443 off
 Do not overwrite an existing mapping on either port; select other available ports
 and update client URLs. Do not use `tailscale serve reset` on a shared host.
 [Serve is tailnet-only and supports separate HTTPS ports](https://tailscale.com/docs/reference/tailscale-cli/serve).
-It may prompt to enable HTTPS; complete that deliberately on the mini. No Serve
-configuration was changed during local verification.
+It may prompt to enable HTTPS; complete that deliberately on the host.
 
-Direct tailnet binding is an alternative: set `BIND_IP` to the mini's Tailscale IPv4
+Direct tailnet binding is an alternative: set `BIND_IP` to the host's Tailscale IPv4
 and recreate containers. That uses the application's HTTP port over the encrypted
 Tailscale connection, without Serve HTTPS. Keep loopback binding for the recommended
 Serve setup; do not use `0.0.0.0`. Callback binding remains loopback in either case.
@@ -139,15 +139,15 @@ Transparency publicly records the hostname, even though the service is private.
 See the [Cloudflare module](https://github.com/caddy-dns/cloudflare) and
 [Tailscale TCP forwarding](https://tailscale.com/docs/reference/tailscale-cli/serve#use-a-tcp-forwarder).
 
-Create a **DNS-only** Cloudflare A record `cpa.home.ccly.dev` pointing to the mini's
-tailnet IPv4 (`100.92.118.42` for this deployment). An existing wildcard resolving
-to that address also works. Do not publish an unrelated AAAA record. If a local
+Create a **DNS-only** Cloudflare A record `cpa.home.ccly.dev` pointing to the host's
+tailnet IPv4 (`100.67.215.33`, the Studio, for this deployment). The `*.home.ccly.dev`
+wildcard still points to the Mac mini, so this exact record must stay. Do not publish an unrelated AAAA record. If a local
 resolver overrides `*.home.ccly.dev` to a LAN address, add an exact-name override
 for `cpa.home.ccly.dev` to the tailnet address; preserve other home services.
 
 Use an existing Cloudflare API token with **Zone / Zone / Read** and
 **Zone / DNS / Edit**, restricted to the `ccly.dev` zone. Store it only in the
-mini's ignored `.env`, never in shell arguments, committed files, or logs. Add
+host's ignored `.env`, never in shell arguments, committed files, or logs. Add
 these entries to existing installations; new `init.sh` runs copy them from
 `.env.example`:
 
@@ -176,46 +176,58 @@ state in `data/caddy` and `data/caddy-config`, covered by the existing cold back
 It renews automatically while running with valid DNS credentials. Existing startup
 and upgrade scripts honor `COMPOSE_PROFILES=https` in `.env`.
 
-On this mini, Nginx Proxy Manager already owns host port 443. Publish Caddy only on
-loopback 19443 and use **raw TCP Serve** for tailnet port 443. This preserves the
-custom certificate end to end and does not modify Nginx Proxy Manager. The old
-ts.net manager HTTPS mapping conflicts with raw TCP on 443, so move it to unused
-8444 first; keep the existing inference mapping on 8443:
+Publish Caddy only on loopback 19443 and use **raw TCP Serve** for tailnet port 443.
+This preserves the custom certificate end to end. A ts.net HTTPS mapping on 443
+conflicts with raw TCP, so move it to an unused port first:
 
 ```sh
 tailscale serve status
-tailscale serve --bg --https=8444 http://127.0.0.1:18317
 tailscale serve --https=443 off
 tailscale serve --bg --tcp=443 tcp://127.0.0.1:19443
 ```
 
 The macOS app's CLI is `/Applications/Tailscale.app/Contents/MacOS/Tailscale` if
 `tailscale` is absent from PATH. Only replace the p4-cpa mapping, never use `reset`.
-Verify 8444 works before replacing 443. Roll back with `tailscale serve --tcp=443
-off`, then restore `tailscale serve --bg --https=443 http://127.0.0.1:18317`.
-The optional proxy can remain running privately during rollback.
+Roll back with `tailscale serve --tcp=443 off`. The optional proxy can remain
+running privately during rollback.
 
-Tailnet port 443 is shared with the other `*.home.ccly.dev` services, whose public
-wildcard also resolves to the mini's tailnet address. Caddy routes the shared port by
-TLS server name (the layer4 plugin): `HTTPS_HOST` terminates in Caddy, and every other
-name passes through still encrypted to `HTTPS_PASSTHROUGH_UPSTREAM`
-(`host.docker.internal:443`, Nginx Proxy Manager, by default), so those services keep
-their own certificates.
+The repository Caddyfile routes the shared port by TLS server name (the layer4
+plugin): `HTTPS_HOST` terminates in Caddy, and every other name passes through still
+encrypted to `HTTPS_PASSTHROUGH_UPSTREAM` (`host.docker.internal:443` by default), so
+another proxy on the host keeps its own certificates.
 
-On the primary mini, Tailscale also binds host port 443, so Nginx Proxy Manager
-publishes an additional `127.0.0.1:19444:443` mapping in
-`/Users/po/docker/npm/compose.yml`. The production `.env` sets
-`HTTPS_PASSTHROUGH_UPSTREAM=host.docker.internal:19444` to avoid that conflict.
-Keep this loopback mapping when recreating Nginx Proxy Manager. Verify its route
-directly with port 19444 if other private hostnames stop responding while CPA
-continues to work.
+### Studio port sharing
 
-Check another private hostname after a change:
+On the Studio, tailnet port 443 is shared with P4 Code, not with another proxy.
+Two ignored files under `data/` (so they travel in the cold backup) replace the
+repository Caddyfile:
 
-```sh
-curl --resolve vault.home.ccly.dev:19443:127.0.0.1 \
-  https://vault.home.ccly.dev:19443/api/version -o /dev/null -w '%{http_code}\n'
-```
+- `.env` sets `COMPOSE_FILE=docker-compose.yml:data/compose.studio.yml`. That overlay
+  mounts `data/caddy-studio/Caddyfile` over `/etc/caddy/Caddyfile` and the ts.net
+  certificate directory `data/ts-certs`.
+- `data/caddy-studio/Caddyfile` sends `cpa.home.ccly.dev` to CPA, and both
+  `macstudio.tailfb37f4.ts.net` and `p4code.local` to P4 Code on
+  `host.docker.internal:3773`. It has no passthrough route, so
+  `HTTPS_PASSTHROUGH_UPSTREAM` is unused there.
+- `p4code.local` uses Caddy's own local CA (`tls internal`, root at
+  `data/caddy/caddy/pki/authorities/local/root.crt`). It works only on machines with
+  a hosts entry for the Studio's tailnet addresses and that root trusted for SSL.
+- The ts.net certificate comes from `tailscale cert`, renewed daily by the
+  `codes.p4.cpa.tscert` LaunchAgent running `data/caddy-studio/renew-tscert.sh`, which
+  retries until Tailscale is connected and then reloads Caddy when the certificate changed.
+
+Editing `https/Caddyfile` therefore changes nothing on the Studio. After a change,
+check both names from another tailnet device: the manager returns 200 and
+`https://macstudio.tailfb37f4.ts.net/` serves P4 Code.
+
+Clients running on the Studio itself cannot use these names. Tailscale resets a
+connection the Studio opens to its own tailnet address on 443 (curl reports
+`Connection reset by peer`, Claude reports `ECONNRESET`). Point local clients at
+loopback instead: inference `http://127.0.0.1:8317` (`/v1` for OpenAI-style clients)
+and management `http://127.0.0.1:18317`. The Studio's P4 Code provider instances
+`claude_cpa` and `codex_cpa` use these. Restart the P4 Code service after editing
+their URLs in `settings.json` by hand; on 2026-11-01 new provider sessions kept
+the old URL until the restart.
 
 Use `https://cpa.home.ccly.dev/management.html` for the manager and
 `https://cpa.home.ccly.dev/v1` for clients. `/v1/*` and `/v1beta/*` go to CPA with
@@ -231,14 +243,14 @@ plus Serve setup because the Tailscale app owns its virtual address.
 ## Headless OAuth
 
 Open OAuth Login in the manager over Tailscale. The provider's callback `localhost`
-refers to the browser machine, not the mini. Forward the callback ports over SSH
+refers to the browser machine, not the Studio. Forward the callback ports over SSH
 before starting login (adjust remote ports if `.env` changed them):
 
 ```sh
 ssh -N -o ExitOnForwardFailure=yes \
   -L 8085:127.0.0.1:8085 -L 1455:127.0.0.1:1455 \
   -L 54545:127.0.0.1:54545 -L 51121:127.0.0.1:51121 \
-  -L 11451:127.0.0.1:11451 user@mini-tailnet-host
+  -L 11451:127.0.0.1:11451 po@macstudio
 ```
 
 Enable macOS Remote Login for the intended user, restricted to your private network.
@@ -312,13 +324,13 @@ Do not downgrade a migrated database without its matching pre-upgrade backup.
 Repoint/reinstall launch jobs only after verification. These scripts do not pull
 upstream subtrees automatically; source updates use `scripts/sync-upstream.sh`.
 
-## Automatic deployment on the primary mini
+## Automatic deployment on the Studio
 
 The repo ship skill is [.agents/skills/p4-cpa-ship/SKILL.md](../.agents/skills/p4-cpa-ship/SKILL.md).
 The optional `codes.p4.cpa.autodeploy` LaunchAgent polls `origin/main` every 300 seconds.
 It uses outbound Git and GitHub API access; no inbound webhook or production CI runner is needed.
 
-Prerequisites on the primary mini: a clean `main` checkout, running healthy stack,
+Prerequisites on the Studio: a clean `main` checkout, running healthy stack,
 Docker/Compose, Python 3, Git, and `gh` with unattended read access to this private repository
 and its Actions runs. Keep authentication in the host's existing credential store. Never
 put tokens in a plist, command argument, or committed file.
@@ -327,7 +339,7 @@ put tokens in a plist, command argument, or committed file.
 # Render and inspect first. This does not install or start the poller.
 ./scripts/install-launchd.sh --auto-deploy --runtime orbstack
 plutil -lint .artifacts/launchd/*.plist
-# On the primary mini only, after the first verified deployment:
+# On the Studio only, after the first verified deployment:
 ./scripts/install-launchd.sh --install --auto-deploy --runtime orbstack
 launchctl print gui/$(id -u)/codes.p4.cpa.autodeploy
 ```
@@ -356,25 +368,24 @@ To pause across logins, `launchctl disable gui/$(id -u)/codes.p4.cpa.autodeploy`
 reinstalling. A normal merge does not change the installed poller or its interval;
 reinstall after plist changes. The host must be awake and logged in. Expect brief
 service interruption for backup and container replacement. Verify the private HTTPS
-manager and another shared SNI hostname after deployment.
+manager and `https://macstudio.tailfb37f4.ts.net/` (P4 Code on the shared port)
+after deployment.
 
-## Manual Studio failover
+## Moving to another host
 
-1. Fence the mini first: stop its stack and disable startup. If unreachable, power
-   it off or otherwise ensure it cannot continue or restart. Never activate Studio
-   merely because the mini stopped answering.
-2. Take/copy the latest complete private archive. On Studio, restore `.env`,
+1. Fence the current host first: stop its stack and disable its jobs. If unreachable,
+   power it off or otherwise ensure it cannot continue or restart.
+2. Take/copy the latest complete private archive. On the new host, restore `.env`,
    `config.yaml`, `auths/`, `data/` including `data.key`, and `plugins/` together into
    a checkout at the matching commit. Keep local paths and backup locations separate.
-3. Start and verify Studio, configure its own Serve mappings, and update client
-   URLs to its tailnet hostname. Accounts and history are only as recent as the backup.
-4. Fail back using the same process in reverse: stop/fence Studio first, transfer
-   its latest matched data, then activate the mini. Only one instance is active.
+3. Start and verify, configure the new host's Serve mappings, repoint the
+   `cpa.home.ccly.dev` record, and update client URLs. Accounts and history are only
+   as recent as the backup. Only one instance is active.
 
 ## Verification boundary
 
 Source builds, local health/connectivity, backup/restore, scripts and plist syntax
 can be checked on the development Mac. Installing LaunchAgents, cold-boot recovery,
-mini sleep/power settings, actual tailnet HTTPS access from another device, and
-provider OAuth are deferred to the mini. No jobs or Tailscale mappings are installed
+Studio sleep/power settings, actual tailnet HTTPS access from another device, and
+provider OAuth are verified on the Studio. No jobs or Tailscale mappings are installed
 by rendering templates or reading this guide.

@@ -220,6 +220,14 @@ Editing `https/Caddyfile` therefore changes nothing on the Studio. After a chang
 check both names from another tailnet device: the manager returns 200 and
 `https://macstudio.tailfb37f4.ts.net/` serves P4 Code.
 
+Clients running on the Studio itself cannot use these names. Tailscale resets a
+connection the Studio opens to its own tailnet address on 443 (curl reports
+`Connection reset by peer`, Claude reports `ECONNRESET`). Point local clients at
+loopback instead: inference `http://127.0.0.1:8317` (`/v1` for OpenAI-style clients)
+and management `http://127.0.0.1:18317`. The Studio's P4 Code provider instances
+`claude_cpa` and `codex_cpa` use these. Restart the P4 Code service after editing
+their URLs in `settings.json` by hand; a running session keeps the old environment.
+
 Use `https://cpa.home.ccly.dev/management.html` for the manager and
 `https://cpa.home.ccly.dev/v1` for clients. `/v1/*` and `/v1beta/*` go to CPA with
 streaming enabled; other paths go to the manager. Application keys remain required.

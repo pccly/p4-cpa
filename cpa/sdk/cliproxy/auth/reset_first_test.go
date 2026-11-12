@@ -8,6 +8,7 @@ import (
 	"time"
 
 	cliproxyexecutor "github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/executor"
+	sdktranslator "github.com/router-for-me/CLIProxyAPI/v8/sdk/translator"
 )
 
 func resetFirstAuth(id, provider string, observed time.Time, headers map[string]string) *Auth {
@@ -120,17 +121,11 @@ func TestResetFirstAffinityRebindsAfterBoundAccountRenews(t *testing.T) {
 	pick([]*Auth{unknown}, "unknown-bound", unknown.ID)
 	pick([]*Auth{unknown, waiting}, "unknown-bound", unknown.ID)
 
-	stale := resetFirstAuth("a-stale", "claude", now, map[string]string{"anthropic-ratelimit-unified-7d-reset": reset(7 * 24 * time.Hour)})
+	stale := resetFirstAuth("b-stale", "claude", now, map[string]string{"anthropic-ratelimit-unified-7d-reset": reset(7 * 24 * time.Hour)})
+	unknownFirst := resetFirstAuth("a-unknown", "claude", now, map[string]string{})
 	pick([]*Auth{stale}, "skip-unknown", stale.ID)
-	trio := []*Auth{stale, waiting, unknown}
-	for i := 0; i < 2; i++ {
-		opts := cliproxyexecutor.Options{Headers: http.Header{"X-Session-Id": []string{"skip-unknown"}}}
-		got, err := sticky.Pick(context.Background(), "claude", "claude-fable-test", opts, trio)
-		if err != nil || got == nil || got.ID == unknown.ID {
-			t.Fatalf("pick = %v, %v; want stale or waiting", got, err)
-		}
-	}
-	pick(trio, "skip-unknown", waiting.ID)
+	pick([]*Auth{unknownFirst, stale}, "skip-unknown", stale.ID)
+	pick([]*Auth{unknownFirst, stale, waiting}, "skip-unknown", waiting.ID)
 
 	soon := resetFirstAuth("d-soon", "claude", now, map[string]string{"anthropic-ratelimit-unified-7d-reset": reset(time.Hour)})
 	pick([]*Auth{waiting}, "tiered", waiting.ID)
@@ -180,4 +175,84 @@ func TestResetFirstSelectorSharesWithUnobservedAccounts(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestResetFirstRebindTargetRules(t *testing.T) {
+	now := time.Now().Add(-time.Second)
+	claude := func(id string, d time.Duration) *Auth {
+		return resetFirstAuth(id, "claude", now, map[string]string{"anthropic-ratelimit-unified-7d-reset": strconv.FormatInt(now.Add(d).Unix(), 10)})
+	}
+	codex := func(id string, d time.Duration, websockets bool) *Auth {
+		auth := resetFirstAuth(id, "codex", now, map[string]string{"x-codex-primary-window-minutes": "10080", "x-codex-primary-reset-at": strconv.FormatInt(now.Add(d).Unix(), 10)})
+		auth.Attributes = map[string]string{"websockets": strconv.FormatBool(websockets)}
+		return auth
+	}
+	newSelector := func(rebindOn string) *SessionAffinitySelector {
+		s := NewSessionAffinitySelectorWithConfig(SessionAffinityConfig{Fallback: &ResetFirstSelector{}, TTL: time.Hour, RebindOn: rebindOn})
+		t.Cleanup(s.Stop)
+		return s
+	}
+	bound := claude("bound", 24*time.Hour)
+	wsCtx := cliproxyexecutor.WithDownstreamWebsocket(context.Background())
+	wsBound := codex("ws-bound", 5*24*time.Hour, true)
+	for _, tc := range []struct {
+		name, rebindOn, provider string
+		ctx                      context.Context
+		bound                    *Auth
+		candidates               []*Auth
+		want                     string
+	}{
+		{"exactly one hour sooner stays", "", "claude", context.Background(), bound, []*Auth{bound, claude("x", 23*time.Hour)}, ""},
+		{"just over one hour sooner moves", "", "claude", context.Background(), bound, []*Auth{bound, claude("x", 23*time.Hour-time.Second)}, "x"},
+		{"soonest known target wins", "", "claude", context.Background(), bound, []*Auth{bound, claude("y", 10*time.Hour), claude("x", 2*time.Hour)}, "x"},
+		{"equal targets break ties by id", "", "claude", context.Background(), bound, []*Auth{bound, claude("y", 2*time.Hour), claude("x", 2*time.Hour)}, "x"},
+		{"rebind-on never keeps binding", "never", "claude", context.Background(), bound, []*Auth{bound, claude("x", time.Hour)}, ""},
+		{"rebind-on quota still moves", "quota", "claude", context.Background(), bound, []*Auth{bound, claude("x", time.Hour)}, "x"},
+		{"bound outside tier stays", "", "claude", context.Background(), bound, []*Auth{claude("x", time.Hour)}, ""},
+		{"websocket filter ignores http-only codex", "", "codex", wsCtx, wsBound, []*Auth{wsBound, codex("http-only", time.Hour, false)}, ""},
+		{"websocket filter allows websocket codex", "", "codex", wsCtx, wsBound, []*Auth{wsBound, codex("http-only", time.Hour, false), codex("ws-soon", 2*time.Hour, true)}, "ws-soon"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := newSelector(tc.rebindOn).resetFirstRebindTarget(tc.ctx, tc.provider, "model", tc.bound, tc.candidates, time.Now())
+			if gotID := ""; got != nil {
+				gotID = got.ID
+				if gotID != tc.want {
+					t.Fatalf("target = %s, want %q", gotID, tc.want)
+				}
+			} else if tc.want != "" {
+				t.Fatalf("target = nil, want %s", tc.want)
+			}
+		})
+	}
+}
+
+func TestResetFirstAffinityRebindsLCPSessions(t *testing.T) {
+	now := time.Now().Add(-time.Second)
+	reset := func(d time.Duration) string { return strconv.FormatInt(now.Add(d).Unix(), 10) }
+	renewing := resetFirstAuth("a-renewing", "claude", now, map[string]string{"anthropic-ratelimit-unified-7d-reset": reset(time.Hour)})
+	waiting := resetFirstAuth("b-waiting", "claude", now, map[string]string{"anthropic-ratelimit-unified-7d-reset": reset(4 * 24 * time.Hour)})
+	auths := []*Auth{renewing, waiting}
+	sticky := NewSessionAffinitySelectorWithConfig(SessionAffinityConfig{Fallback: &ResetFirstSelector{}, TTL: time.Hour})
+	defer sticky.Stop()
+	conversation := `{"role":"system","content":"stable"},{"role":"user","content":"first"}`
+	pick := func(want string) {
+		t.Helper()
+		opts := cliproxyexecutor.Options{
+			SourceFormat:    sdktranslator.FormatOpenAI,
+			OriginalRequest: []byte(`{"messages":[` + conversation + `]}`),
+			Metadata:        map[string]any{cliproxyexecutor.CallerScopeMetadataKey: "caller"},
+		}
+		got, err := sticky.Pick(context.Background(), "claude", "claude-test", opts, auths)
+		if err != nil || got == nil || got.ID != want {
+			t.Fatalf("pick = %v, %v; want %s", got, err, want)
+		}
+	}
+	pick(renewing.ID)
+	conversation += `,{"role":"assistant","content":"answer"},{"role":"user","content":"second"}`
+	pick(renewing.ID)
+	renewing.Quota.Signals[http.CanonicalHeaderKey("anthropic-ratelimit-unified-7d-reset")] = reset(7 * 24 * time.Hour)
+	conversation += `,{"role":"assistant","content":"answer"},{"role":"user","content":"third"}`
+	pick(waiting.ID)
+	conversation += `,{"role":"assistant","content":"answer"},{"role":"user","content":"fourth"}`
+	pick(waiting.ID)
 }

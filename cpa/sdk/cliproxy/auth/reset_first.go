@@ -51,9 +51,8 @@ func (s *ResetFirstSelector) Pick(ctx context.Context, provider, model string, o
 
 const resetFirstRebindMargin = time.Hour
 
-func (s *SessionAffinitySelector) resetFirstRebindTarget(ctx context.Context, provider, model string, opts cliproxyexecutor.Options, bound *Auth, candidates []*Auth, now time.Time) *Auth {
-	resetFirst, ok := s.fallback.(*ResetFirstSelector)
-	if !ok || bound == nil {
+func (s *SessionAffinitySelector) resetFirstRebindTarget(ctx context.Context, provider, model string, bound *Auth, candidates []*Auth, now time.Time) *Auth {
+	if _, ok := s.fallback.(*ResetFirstSelector); !ok || s.rebindOnNever || bound == nil {
 		return nil
 	}
 	boundReset := weeklyResetAt(bound, model, now)
@@ -61,28 +60,29 @@ func (s *SessionAffinitySelector) resetFirstRebindTarget(ctx context.Context, pr
 		return nil
 	}
 	candidates = preferCodexWebsocketAuths(ctx, provider, candidates)
-	inTier, sooner := false, false
+	inTier := false
+	var target *Auth
+	var targetReset time.Time
 	for _, candidate := range candidates {
 		if candidate == nil {
 			continue
 		}
 		if candidate.ID == bound.ID {
 			inTier = true
-		} else if reset := weeklyResetAt(candidate, model, now); !reset.IsZero() && reset.Add(resetFirstRebindMargin).Before(boundReset) {
-			sooner = true
+			continue
+		}
+		reset := weeklyResetAt(candidate, model, now)
+		if reset.IsZero() || !reset.Add(resetFirstRebindMargin).Before(boundReset) {
+			continue
+		}
+		if target == nil || reset.Before(targetReset) || (reset.Equal(targetReset) && candidate.ID < target.ID) {
+			target, targetReset = candidate, reset
 		}
 	}
-	if !inTier || !sooner {
+	if !inTier {
 		return nil
 	}
-	moved, err := resetFirst.Pick(ctx, provider, model, opts, candidates)
-	if err != nil || moved == nil || moved.ID == bound.ID {
-		return nil
-	}
-	if reset := weeklyResetAt(moved, model, now); reset.IsZero() || !reset.Add(resetFirstRebindMargin).Before(boundReset) {
-		return nil
-	}
-	return moved
+	return target
 }
 
 func weeklyResetAt(credential *Auth, model string, now time.Time) time.Time {

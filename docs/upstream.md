@@ -42,6 +42,29 @@ its absence postpones the performance benefit but does not block correctness
 fixes or startup. Follow the stopped-service maintenance procedure in
 [hosting.md](hosting.md). No database maintenance runs as part of source integration.
 
+## P4 CPA 1.0.2 integration
+
+Version **1.0.2** integrates CLIProxyAPI **v8.0.67**
+(`8bba7a77c6bcbfd993516d26606bfecaa4ff49d0`) and CPA Manager Plus **v1.14.10**
+(`a67ed8834a914ab24c36d2490fa6bb6d4166724c`). Use these source commits as the
+comparison base for the next upstream integration.
+
+This update includes request-log path traversal and log-injection fixes, bounded
+zstd request-log decompression, unauthenticated body descriptor limits, credential
+header stripping on cross-origin plugin redirects, Claude Fable 5.2 handling,
+Codex SIWC credential renewal fixes, per-API-key connection pools, stream truncation
+detection, structured usage capture, and watcher protection against credential loss
+during incomplete writes. Upstream proxy JSON handling moved from gjson/sjson to
+moego. Manager adds quota and usage-history scoping fixes, pinned credentials, the
+read-only v8 API-key group view, and dependency security patches.
+
+P4's reset-first routing, extra-usage controls, subscription quota blocks, redacted
+WebSocket URLs in logs, HTTP-default Codex transport, branding, and disabled update
+polling remain in place. CLIProxyAPI now keeps a local bbolt key-value store at
+`<auth-dir>/kv.db` by default, inside the persisted auths directory, and compresses
+downstream responses only when a client requests zstd or gzip. Take the usual cold
+backup before deployment.
+
 ## Independent releases
 
 P4 CPA no longer displays upstream release links, latest-version badges, or update

@@ -84,11 +84,58 @@ func TestResetFirstSelectorPriorityCooldownAndAffinity(t *testing.T) {
 	defer sticky.Stop()
 	opts := cliproxyexecutor.Options{Headers: http.Header{"X-Session-Id": []string{"existing"}}}
 	pick(sticky, opts, sooner.ID)
-	later.Quota.Signals[http.CanonicalHeaderKey("anthropic-ratelimit-unified-7d-reset")] = strconv.FormatInt(now.Add(12*time.Hour).Unix(), 10)
+	later.Quota.Signals[http.CanonicalHeaderKey("anthropic-ratelimit-unified-7d-reset")] = strconv.FormatInt(now.Add(24*time.Hour+30*time.Minute).Unix(), 10)
 	pick(sticky, opts, sooner.ID)
+	later.Quota.Signals[http.CanonicalHeaderKey("anthropic-ratelimit-unified-7d-reset")] = strconv.FormatInt(now.Add(12*time.Hour).Unix(), 10)
+	pick(sticky, opts, later.ID)
+	pick(sticky, opts, later.ID)
 	pick(sticky, cliproxyexecutor.Options{Headers: http.Header{"X-Session-Id": []string{"new"}}}, later.ID)
 	sooner.Disabled = true
 	pick(sticky, opts, later.ID)
+}
+
+func TestResetFirstAffinityRebindsAfterBoundAccountRenews(t *testing.T) {
+	now := time.Now().Add(-time.Second)
+	reset := func(d time.Duration) string { return strconv.FormatInt(now.Add(d).Unix(), 10) }
+	renewing := resetFirstAuth("a-renewing", "claude", now, map[string]string{"anthropic-ratelimit-unified-7d-reset": reset(time.Hour), "anthropic-ratelimit-unified-7d_oi-reset": reset(time.Hour)})
+	waiting := resetFirstAuth("b-waiting", "claude", now, map[string]string{"anthropic-ratelimit-unified-7d-reset": reset(4 * 24 * time.Hour)})
+	unknown := resetFirstAuth("c-unknown", "claude", now, map[string]string{})
+	sticky := NewSessionAffinitySelectorWithConfig(SessionAffinityConfig{Fallback: &ResetFirstSelector{}, TTL: time.Hour})
+	defer sticky.Stop()
+	pick := func(auths []*Auth, session, want string) {
+		t.Helper()
+		opts := cliproxyexecutor.Options{Headers: http.Header{"X-Session-Id": []string{session}}}
+		got, err := sticky.Pick(context.Background(), "claude", "claude-fable-test", opts, auths)
+		if err != nil || got == nil || got.ID != want {
+			t.Fatalf("pick = %v, %v; want %s", got, err, want)
+		}
+	}
+	pair := []*Auth{renewing, waiting}
+	pick(pair, "fable", renewing.ID)
+	renewing.Quota.Signals[http.CanonicalHeaderKey("anthropic-ratelimit-unified-7d-reset")] = reset(7 * 24 * time.Hour)
+	renewing.Quota.Signals[http.CanonicalHeaderKey("anthropic-ratelimit-unified-7d_oi-reset")] = reset(7 * 24 * time.Hour)
+	pick(pair, "fable", waiting.ID)
+	pick(pair, "fable", waiting.ID)
+
+	pick([]*Auth{unknown}, "unknown-bound", unknown.ID)
+	pick([]*Auth{unknown, waiting}, "unknown-bound", unknown.ID)
+
+	stale := resetFirstAuth("a-stale", "claude", now, map[string]string{"anthropic-ratelimit-unified-7d-reset": reset(7 * 24 * time.Hour)})
+	pick([]*Auth{stale}, "skip-unknown", stale.ID)
+	trio := []*Auth{stale, waiting, unknown}
+	for i := 0; i < 2; i++ {
+		opts := cliproxyexecutor.Options{Headers: http.Header{"X-Session-Id": []string{"skip-unknown"}}}
+		got, err := sticky.Pick(context.Background(), "claude", "claude-fable-test", opts, trio)
+		if err != nil || got == nil || got.ID == unknown.ID {
+			t.Fatalf("pick = %v, %v; want stale or waiting", got, err)
+		}
+	}
+	pick(trio, "skip-unknown", waiting.ID)
+
+	soon := resetFirstAuth("d-soon", "claude", now, map[string]string{"anthropic-ratelimit-unified-7d-reset": reset(time.Hour)})
+	pick([]*Auth{waiting}, "tiered", waiting.ID)
+	soon.Attributes = map[string]string{"priority": "1"}
+	pick([]*Auth{soon, waiting}, "tiered", waiting.ID)
 }
 
 func TestResetFirstSelectorUnknownAndEqualResetFallback(t *testing.T) {

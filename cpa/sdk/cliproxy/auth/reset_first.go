@@ -49,6 +49,42 @@ func (s *ResetFirstSelector) Pick(ctx context.Context, provider, model string, o
 	return s.fallback.Pick(ctx, provider, model, opts, candidates)
 }
 
+const resetFirstRebindMargin = time.Hour
+
+func (s *SessionAffinitySelector) resetFirstRebindTarget(ctx context.Context, provider, model string, opts cliproxyexecutor.Options, bound *Auth, candidates []*Auth, now time.Time) *Auth {
+	resetFirst, ok := s.fallback.(*ResetFirstSelector)
+	if !ok || bound == nil {
+		return nil
+	}
+	boundReset := weeklyResetAt(bound, model, now)
+	if boundReset.IsZero() {
+		return nil
+	}
+	candidates = preferCodexWebsocketAuths(ctx, provider, candidates)
+	inTier, sooner := false, false
+	for _, candidate := range candidates {
+		if candidate == nil {
+			continue
+		}
+		if candidate.ID == bound.ID {
+			inTier = true
+		} else if reset := weeklyResetAt(candidate, model, now); !reset.IsZero() && reset.Add(resetFirstRebindMargin).Before(boundReset) {
+			sooner = true
+		}
+	}
+	if !inTier || !sooner {
+		return nil
+	}
+	moved, err := resetFirst.Pick(ctx, provider, model, opts, candidates)
+	if err != nil || moved == nil || moved.ID == bound.ID {
+		return nil
+	}
+	if reset := weeklyResetAt(moved, model, now); reset.IsZero() || !reset.Add(resetFirstRebindMargin).Before(boundReset) {
+		return nil
+	}
+	return moved
+}
+
 func weeklyResetAt(credential *Auth, model string, now time.Time) time.Time {
 	quota := credential.Quota
 	if state := credential.ModelStates[canonicalModelKey(model)]; state != nil && state.Quota.ObservedAt.After(quota.ObservedAt) {

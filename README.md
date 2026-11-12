@@ -70,7 +70,8 @@ Editing `CPA_CLIENT_KEY` in `.env` alone does not update CPA's active key.
 New installations use `routing.strategy: reset-first` with session affinity enabled
 for one hour of inactivity. New sessions prefer the available account with the
 soonest observed weekly reset; existing sessions keep their account until it becomes
-unavailable. Explicit credential priorities still take precedence. Equal reset times,
+unavailable, or until another account in the same priority tier resets more than an
+hour sooner (for example after the bound account's weekly window renews). Explicit credential priorities still take precedence. Equal reset times,
 or a pool without usable reset observations, fall back to round robin. Five-hour
 windows never determine reset priority. Reset observations come from upstream
 responses, so accounts without an observed reset share new sessions with the

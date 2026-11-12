@@ -4301,7 +4301,7 @@
           "routing_strategy_hint": "先依優先級篩選，再由加權輪詢按憑證權重分配請求；未設定權重時預設為 1，非正數只會在此模式下排除該憑證。",
           "strategy_round_robin": "輪詢（Round Robin）",
           "strategy_weighted_round_robin": "加權輪詢（Weighted Round Robin）",
-          "strategy_reset_first_hint": "優先級優先。新會話優先使用已觀測到的週配額最早重置的帳號；未知日期回退為輪詢。會話親和性使已有會話保留原帳號，直到其他帳號更早重置。",
+          "strategy_reset_first_hint": "優先級優先。新會話優先使用已觀測到的週配額最早重置的帳號；未知日期回退為輪詢。會話親和性使已有會話保留原帳號；當其他 Claude 帳號更早重置時，Claude 會話會遷移。",
           "strategy_reset_first": "最早重置",
           "strategy_fill_first": "填充優先（Fill First）",
           "session_affinity_ttl": "會話黏性 TTL",

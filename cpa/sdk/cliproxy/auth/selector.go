@@ -1695,7 +1695,7 @@ func (s *SessionAffinitySelector) Pick(ctx context.Context, provider, model stri
 	if cachedAuthID, ok := s.cache.GetAndRefresh(cacheKey); ok {
 		for _, auth := range available {
 			if auth.ID == cachedAuthID {
-				if moved := s.resetFirstRebindTarget(ctx, provider, model, auth, fallbackAuths, now); moved != nil {
+				if moved := s.resetFirstRebindTarget(model, auth, fallbackAuths, now); moved != nil {
 					bind(moved.ID, true)
 					entry.Infof("session-affinity: cache hit but earlier weekly reset available, rebound | session=%s bound_auth=%s auth=%s provider=%s model=%s", truncateSessionID(primaryID), auth.ID, moved.ID, provider, model)
 					return moved, nil
@@ -1851,7 +1851,7 @@ func (s *SessionAffinitySelector) pickLCP(ctx context.Context, provider, model s
 				continue
 			}
 			if !match.IsFork {
-				if rebindTarget = s.resetFirstRebindTarget(ctx, provider, model, auth, highestPriorityAuths(available), now); rebindTarget != nil {
+				if rebindTarget = s.resetFirstRebindTarget(model, auth, highestPriorityAuths(available), now); rebindTarget != nil {
 					entry.Infof("session-affinity: LCP cache hit but earlier weekly reset available, rebinding | session=%s bound_auth=%s auth=%s provider=%s model=%s", truncateSessionID(match.SessionID), auth.ID, rebindTarget.ID, provider, model)
 					break
 				}

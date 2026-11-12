@@ -51,15 +51,14 @@ func (s *ResetFirstSelector) Pick(ctx context.Context, provider, model string, o
 
 const resetFirstRebindMargin = time.Hour
 
-func (s *SessionAffinitySelector) resetFirstRebindTarget(ctx context.Context, provider, model string, bound *Auth, candidates []*Auth, now time.Time) *Auth {
-	if _, ok := s.fallback.(*ResetFirstSelector); !ok || s.rebindOnNever || bound == nil {
+func (s *SessionAffinitySelector) resetFirstRebindTarget(model string, bound *Auth, candidates []*Auth, now time.Time) *Auth {
+	if _, ok := s.fallback.(*ResetFirstSelector); !ok || s.rebindOnNever || bound == nil || !strings.EqualFold(strings.TrimSpace(bound.Provider), "claude") {
 		return nil
 	}
 	boundReset := weeklyResetAt(bound, model, now)
 	if boundReset.IsZero() {
 		return nil
 	}
-	candidates = preferCodexWebsocketAuths(ctx, provider, candidates)
 	inTier := false
 	var target *Auth
 	var targetReset time.Time
@@ -69,6 +68,9 @@ func (s *SessionAffinitySelector) resetFirstRebindTarget(ctx context.Context, pr
 		}
 		if candidate.ID == bound.ID {
 			inTier = true
+			continue
+		}
+		if !strings.EqualFold(strings.TrimSpace(candidate.Provider), "claude") {
 			continue
 		}
 		reset := weeklyResetAt(candidate, model, now)

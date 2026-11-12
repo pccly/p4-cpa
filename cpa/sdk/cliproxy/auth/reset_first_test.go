@@ -182,10 +182,8 @@ func TestResetFirstRebindTargetRules(t *testing.T) {
 	claude := func(id string, d time.Duration) *Auth {
 		return resetFirstAuth(id, "claude", now, map[string]string{"anthropic-ratelimit-unified-7d-reset": strconv.FormatInt(now.Add(d).Unix(), 10)})
 	}
-	codex := func(id string, d time.Duration, websockets bool) *Auth {
-		auth := resetFirstAuth(id, "codex", now, map[string]string{"x-codex-primary-window-minutes": "10080", "x-codex-primary-reset-at": strconv.FormatInt(now.Add(d).Unix(), 10)})
-		auth.Attributes = map[string]string{"websockets": strconv.FormatBool(websockets)}
-		return auth
+	codex := func(id string, d time.Duration) *Auth {
+		return resetFirstAuth(id, "codex", now, map[string]string{"x-codex-primary-window-minutes": "10080", "x-codex-primary-reset-at": strconv.FormatInt(now.Add(d).Unix(), 10)})
 	}
 	newSelector := func(rebindOn string) *SessionAffinitySelector {
 		s := NewSessionAffinitySelectorWithConfig(SessionAffinityConfig{Fallback: &ResetFirstSelector{}, TTL: time.Hour, RebindOn: rebindOn})
@@ -193,34 +191,31 @@ func TestResetFirstRebindTargetRules(t *testing.T) {
 		return s
 	}
 	bound := claude("bound", 24*time.Hour)
-	wsCtx := cliproxyexecutor.WithDownstreamWebsocket(context.Background())
-	wsBound := codex("ws-bound", 5*24*time.Hour, true)
+	codexBound := codex("codex-bound", 5*24*time.Hour)
 	for _, tc := range []struct {
-		name, rebindOn, provider string
-		ctx                      context.Context
-		bound                    *Auth
-		candidates               []*Auth
-		want                     string
+		name, rebindOn string
+		bound          *Auth
+		candidates     []*Auth
+		want           string
 	}{
-		{"exactly one hour sooner stays", "", "claude", context.Background(), bound, []*Auth{bound, claude("x", 23*time.Hour)}, ""},
-		{"just over one hour sooner moves", "", "claude", context.Background(), bound, []*Auth{bound, claude("x", 23*time.Hour-time.Second)}, "x"},
-		{"soonest known target wins", "", "claude", context.Background(), bound, []*Auth{bound, claude("y", 10*time.Hour), claude("x", 2*time.Hour)}, "x"},
-		{"equal targets break ties by id", "", "claude", context.Background(), bound, []*Auth{bound, claude("y", 2*time.Hour), claude("x", 2*time.Hour)}, "x"},
-		{"rebind-on never keeps binding", "never", "claude", context.Background(), bound, []*Auth{bound, claude("x", time.Hour)}, ""},
-		{"rebind-on quota still moves", "quota", "claude", context.Background(), bound, []*Auth{bound, claude("x", time.Hour)}, "x"},
-		{"bound outside tier stays", "", "claude", context.Background(), bound, []*Auth{claude("x", time.Hour)}, ""},
-		{"websocket filter ignores http-only codex", "", "codex", wsCtx, wsBound, []*Auth{wsBound, codex("http-only", time.Hour, false)}, ""},
-		{"websocket filter allows websocket codex", "", "codex", wsCtx, wsBound, []*Auth{wsBound, codex("http-only", time.Hour, false), codex("ws-soon", 2*time.Hour, true)}, "ws-soon"},
+		{"exactly one hour sooner stays", "", bound, []*Auth{bound, claude("x", 23*time.Hour)}, ""},
+		{"just over one hour sooner moves", "", bound, []*Auth{bound, claude("x", 23*time.Hour-time.Second)}, "x"},
+		{"soonest known target wins", "", bound, []*Auth{bound, claude("y", 10*time.Hour), claude("x", 2*time.Hour)}, "x"},
+		{"equal targets break ties by id", "", bound, []*Auth{bound, claude("y", 2*time.Hour), claude("x", 2*time.Hour)}, "x"},
+		{"rebind-on never keeps binding", "never", bound, []*Auth{bound, claude("x", time.Hour)}, ""},
+		{"rebind-on quota still moves", "quota", bound, []*Auth{bound, claude("x", time.Hour)}, "x"},
+		{"bound outside tier stays", "", bound, []*Auth{claude("x", time.Hour)}, ""},
+		{"codex binding never moves", "", codexBound, []*Auth{codexBound, codex("x", time.Hour)}, ""},
+		{"non-claude target ignored", "", bound, []*Auth{bound, codex("x", time.Hour)}, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got := newSelector(tc.rebindOn).resetFirstRebindTarget(tc.ctx, tc.provider, "model", tc.bound, tc.candidates, time.Now())
-			if gotID := ""; got != nil {
+			got := newSelector(tc.rebindOn).resetFirstRebindTarget("model", tc.bound, tc.candidates, time.Now())
+			gotID := ""
+			if got != nil {
 				gotID = got.ID
-				if gotID != tc.want {
-					t.Fatalf("target = %s, want %q", gotID, tc.want)
-				}
-			} else if tc.want != "" {
-				t.Fatalf("target = nil, want %s", tc.want)
+			}
+			if gotID != tc.want {
+				t.Fatalf("target = %q, want %q", gotID, tc.want)
 			}
 		})
 	}

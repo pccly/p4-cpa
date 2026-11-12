@@ -16,6 +16,8 @@ const CPA_GIT_DESCRIBE_VERSION_PATTERN = /^v?(\d+)\.(\d+)\.(\d+)-(\d+)-g([0-9a-f
 const CPAMP_DEMO_VERSION_PATTERN = /^v?(\d+)\.(\d+)\.(\d+)-demo$/i;
 const FIRST_VERIFIED_MERGE_VERSION = [6, 10, 8] as const;
 const LAST_MERGE_VERSION = [8, 0, 32] as const;
+const P4_RELEASE_VERSION_PATTERN = /^v?(1)\.(\d+)\.(\d+)$/i;
+const P4_FIRST_OVERRIDE_VERSION = [1, 0, 2] as const;
 
 const compareVersion = (current: readonly number[], baseline: readonly number[]) => {
   for (let index = 0; index < baseline.length; index += 1) {
@@ -29,6 +31,11 @@ export const getAccountModelExclusionPriority = (
   serverVersion?: string | null
 ): AccountModelExclusionPriority => {
   const normalizedVersion = serverVersion?.trim() ?? '';
+  const p4Match = normalizedVersion.match(P4_RELEASE_VERSION_PATTERN);
+  if (p4Match) {
+    const p4Version = p4Match.slice(1, 4).map((segment) => Number.parseInt(segment, 10));
+    return compareVersion(p4Version, P4_FIRST_OVERRIDE_VERSION) < 0 ? 'merge' : 'override';
+  }
   const describeMatch = normalizedVersion.match(CPA_GIT_DESCRIBE_VERSION_PATTERN);
   const match =
     describeMatch ??

@@ -30,6 +30,11 @@ describe('accountModelRules', () => {
     ['v8.0.33-1-gabc1234-dirty', 'override'],
     ['v7.1.18-demo', 'merge'],
     ['v8.0.40-dev', 'unknown'],
+    ['1.0.0', 'merge'],
+    ['1.0.1', 'merge'],
+    ['1.0.2', 'override'],
+    ['v1.1.0', 'override'],
+    ['1.0.2-dirty', 'unknown'],
     [null, 'unknown'],
   ] as const)('maps CPA %s to %s exclusion precedence', (version, expected) => {
     expect(getAccountModelExclusionPriority(version)).toBe(expected);

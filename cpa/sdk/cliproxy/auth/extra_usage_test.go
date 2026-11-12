@@ -203,6 +203,21 @@ func TestExtraUsageResetQuotaClearsSubscriptionBlock(t *testing.T) {
 	}
 }
 
+func TestExtraUsageSubscriptionBlockIsQuotaBlockForSessionAffinity(t *testing.T) {
+	now := time.Unix(1800000000, 0)
+	reset := strconv.FormatInt(now.Add(72*time.Hour).Unix(), 10)
+	a := &Auth{ID: "bound", Provider: "codex", Metadata: map[string]any{
+		subscriptionQuotaBlocksKey: map[string]any{"codex-secondary": reset},
+	}}
+	if !isAuthBlockedByQuotaOrAuthForModel(a, "gpt-5", now) {
+		t.Fatal("subscription block was treated as transient")
+	}
+	a.extraUsageDefault = true
+	if isAuthBlockedByQuotaOrAuthForModel(a, "gpt-5", now) {
+		t.Fatal("extra usage did not lift the subscription block")
+	}
+}
+
 func TestExtraUsageFableWindowDoesNotBlockOpus(t *testing.T) {
 	now := time.Unix(1800000000, 0)
 	a := &Auth{Provider: "claude"}

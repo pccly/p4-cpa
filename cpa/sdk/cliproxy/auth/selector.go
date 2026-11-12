@@ -1450,6 +1450,9 @@ func isAuthBlockedByQuotaOrAuthForModelForRequest(ctx context.Context, auth *Aut
 	if auth.Quota.Exceeded && auth.Quota.Reason == "credential_quota" && (auth.Quota.NextRecoverAt.IsZero() || auth.Quota.NextRecoverAt.After(now)) {
 		return true
 	}
+	if blocked, _ := subscriptionQuotaBlock(auth, model, now); blocked {
+		return true
+	}
 	if model != "" && len(auth.ModelStates) > 0 {
 		modelKey := canonicalModelLookupKey(model)
 		for stateModel, state := range auth.ModelStates {

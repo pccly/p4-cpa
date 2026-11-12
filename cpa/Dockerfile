@@ -1,4 +1,4 @@
-FROM golang:1.26-bookworm AS builder
+FROM golang:1.26.10-bookworm AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ RUN go mod download
 
 COPY . .
 
-ARG VERSION=1.0.1
+ARG VERSION=1.0.2
 ARG COMMIT=none
 ARG BUILD_DATE=unknown
 

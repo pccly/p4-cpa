@@ -49,6 +49,44 @@ func (s *ResetFirstSelector) Pick(ctx context.Context, provider, model string, o
 	return s.fallback.Pick(ctx, provider, model, opts, candidates)
 }
 
+const resetFirstRebindMargin = time.Hour
+
+func (s *SessionAffinitySelector) resetFirstRebindTarget(model string, bound *Auth, candidates []*Auth, now time.Time) *Auth {
+	if _, ok := s.fallback.(*ResetFirstSelector); !ok || s.rebindOnNever || bound == nil || !strings.EqualFold(strings.TrimSpace(bound.Provider), "claude") {
+		return nil
+	}
+	boundReset := weeklyResetAt(bound, model, now)
+	if boundReset.IsZero() {
+		return nil
+	}
+	inTier := false
+	var target *Auth
+	var targetReset time.Time
+	for _, candidate := range candidates {
+		if candidate == nil {
+			continue
+		}
+		if candidate.ID == bound.ID {
+			inTier = true
+			continue
+		}
+		if !strings.EqualFold(strings.TrimSpace(candidate.Provider), "claude") {
+			continue
+		}
+		reset := weeklyResetAt(candidate, model, now)
+		if reset.IsZero() || !reset.Add(resetFirstRebindMargin).Before(boundReset) {
+			continue
+		}
+		if target == nil || reset.Before(targetReset) || (reset.Equal(targetReset) && candidate.ID < target.ID) {
+			target, targetReset = candidate, reset
+		}
+	}
+	if !inTier {
+		return nil
+	}
+	return target
+}
+
 func weeklyResetAt(credential *Auth, model string, now time.Time) time.Time {
 	quota := credential.Quota
 	if state := credential.ModelStates[canonicalModelKey(model)]; state != nil && state.Quota.ObservedAt.After(quota.ObservedAt) {

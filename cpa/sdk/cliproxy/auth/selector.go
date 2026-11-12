@@ -1695,6 +1695,11 @@ func (s *SessionAffinitySelector) Pick(ctx context.Context, provider, model stri
 	if cachedAuthID, ok := s.cache.GetAndRefresh(cacheKey); ok {
 		for _, auth := range available {
 			if auth.ID == cachedAuthID {
+				if moved := s.resetFirstRebindTarget(model, auth, fallbackAuths, now); moved != nil {
+					bind(moved.ID, true)
+					entry.Infof("session-affinity: cache hit but earlier weekly reset available, rebound | session=%s bound_auth=%s auth=%s provider=%s model=%s", truncateSessionID(primaryID), auth.ID, moved.ID, provider, model)
+					return moved, nil
+				}
 				bind(auth.ID, true)
 				entry.Infof("session-affinity: cache hit | session=%s auth=%s provider=%s model=%s", truncateSessionID(primaryID), auth.ID, provider, model)
 				return s.pickWithAffinityReservation(ctx, provider, model, opts, available, auth, &reservation)
@@ -1839,10 +1844,17 @@ func (s *SessionAffinitySelector) pickLCP(ctx context.Context, provider, model s
 	}
 
 	var preservedAuthID string
+	var rebindTarget *Auth
 	if match, ok := s.matcher.MatchFingerprintsWithContext(namespace, fingerprints, tailFingerprints, envDigest, minPrefixLength); ok {
 		for _, auth := range available {
 			if auth == nil || auth.ID != match.AuthID {
 				continue
+			}
+			if !match.IsFork {
+				if rebindTarget = s.resetFirstRebindTarget(model, auth, highestPriorityAuths(available), now); rebindTarget != nil {
+					entry.Infof("session-affinity: LCP cache hit but earlier weekly reset available, rebinding | session=%s bound_auth=%s auth=%s provider=%s model=%s", truncateSessionID(match.SessionID), auth.ID, rebindTarget.ID, provider, model)
+					break
+				}
 			}
 			if match.SessionID != "" {
 				opts.Metadata[cliproxyexecutor.LCPAffinitySessionIDMetadataKey] = match.SessionID
@@ -1881,7 +1893,7 @@ func (s *SessionAffinitySelector) pickLCP(ctx context.Context, provider, model s
 			picked, errPick := s.pickWithAffinityReservation(ctx, provider, model, opts, available, auth, reservation)
 			return picked, true, errPick
 		}
-		if !match.IsFork && s.rebindOnNever {
+		if rebindTarget == nil && !match.IsFork && s.rebindOnNever {
 			if bindRes := s.matcher.BindFingerprintsWithContext(namespace, fingerprints, tailFingerprints, envDigest, minPrefixLength, match.AuthID); bindRes.SessionID != "" {
 				opts.Metadata[cliproxyexecutor.LCPAffinitySessionIDMetadataKey] = bindRes.SessionID
 				opts.Metadata[cliproxyexecutor.CanonicalSessionIDMetadataKey] = bindRes.SessionID
@@ -1909,7 +1921,7 @@ func (s *SessionAffinitySelector) pickLCP(ctx context.Context, provider, model s
 			entry.Infof("session-affinity: LCP cache hit but bound auth unavailable, refusing failover | session=%s bound_auth=%s code=%s provider=%s model=%s", truncateSessionID(match.SessionID), match.AuthID, errBound.Code, provider, model)
 			return nil, true, errBound
 		}
-		if !match.IsFork && s.shouldPreserveBindingWhenUnavailable(ctx, availabilityCandidates, model, match.AuthID, now) {
+		if rebindTarget == nil && !match.IsFork && s.shouldPreserveBindingWhenUnavailable(ctx, availabilityCandidates, model, match.AuthID, now) {
 			preservedAuthID = match.AuthID
 		}
 	}
@@ -1917,13 +1929,17 @@ func (s *SessionAffinitySelector) pickLCP(ctx context.Context, provider, model s
 	if errAvailable != nil {
 		return nil, true, errAvailable
 	}
-	fallbackAuths := highestPriorityAuths(available)
-	auth, errPick := s.pickWithAffinityReservation(ctx, provider, model, opts, fallbackAuths, nil, reservation)
-	if errPick != nil {
-		return nil, true, errPick
-	}
+	auth := rebindTarget
 	if auth == nil {
-		return nil, true, &Error{Code: "auth_not_found", Message: "selector returned no auth"}
+		fallbackAuths := highestPriorityAuths(available)
+		picked, errPick := s.pickWithAffinityReservation(ctx, provider, model, opts, fallbackAuths, nil, reservation)
+		if errPick != nil {
+			return nil, true, errPick
+		}
+		if picked == nil {
+			return nil, true, &Error{Code: "auth_not_found", Message: "selector returned no auth"}
+		}
+		auth = picked
 	}
 	bindAuthID := auth.ID
 	if preservedAuthID != "" {

@@ -4308,7 +4308,7 @@
           "routing_strategy_hint": "Priority is applied first. Weighted round robin then distributes requests by each credential weight; omitted weight defaults to 1 and non-positive weight excludes that credential only in this mode.",
           "strategy_round_robin": "Round Robin",
           "strategy_weighted_round_robin": "Weighted Round Robin",
-          "strategy_reset_first_hint": "Priority applies first. New sessions prefer the soonest observed weekly reset; unknown dates use round robin. Session affinity keeps existing sessions on their account.",
+          "strategy_reset_first_hint": "Priority applies first. New sessions prefer the soonest observed weekly reset; unknown dates use round robin. Session affinity keeps existing sessions on their account; Claude sessions move when another Claude account resets sooner.",
           "strategy_reset_first": "Reset First",
           "strategy_fill_first": "Fill First",
           "session_affinity_ttl": "Session Affinity TTL",

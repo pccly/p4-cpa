@@ -2334,6 +2334,7 @@
     "empty_data": "暫無訂閱資料"
   },
   "claude_quota": {
+    "limit_resets_subtitle": "Claude 免費限額重置 · 請在 claude.ai 使用",
     "title": "Claude 配額",
     "empty_title": "暫無 Claude OAuth 驗證",
     "empty_desc": "使用 Claude OAuth 登入後即可查看配額。",

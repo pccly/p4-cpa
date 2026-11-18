@@ -169,12 +169,19 @@ export function AccountQuotaTab({
   const hasResetRecords =
     detailView.quota.resetCreditsAvailableCount !== null ||
     detailView.quota.resetCreditExpiries.length > 0;
-  const shouldShowResetRecords = detailView.identity.provider === 'codex' && hasResetRecords;
+  const isClaudeResets = detailView.identity.provider === 'claude';
+  const shouldShowResetRecords =
+    (detailView.identity.provider === 'codex' || isClaudeResets) && hasResetRecords;
   const [nowMs, setNowMs] = useState(() => Date.now());
   useInterval(() => setNowMs(Date.now()), shouldShowResetRecords ? 60_000 : null);
   const visibleResetCreditExpiries = detailView.quota.resetCreditExpiries.filter(
     (item) => item.expiresAtMs > nowMs
   );
+  const resetCreditsAvailableCount =
+    isClaudeResets && detailView.quota.resetCreditsAvailableCount !== null
+      ? (detailView.quota.resetCreditsOpenEndedCount ?? 0) +
+        visibleResetCreditExpiries.reduce((sum, item) => sum + (item.count ?? 1), 0)
+      : detailView.quota.resetCreditsAvailableCount;
 
   return (
     <div className={styles.quotaTab} data-account-quota-tab="true">
@@ -336,33 +343,39 @@ export function AccountQuotaTab({
                 </span>
                 <div className={styles.quotaResetTitle}>
                   <h3>{t('accounts.detail_quota_reset_records', { defaultValue: '重置记录' })}</h3>
-                  <span>{t('codex_quota.reset_credits_card_subtitle')}</span>
+                  <span>
+                    {isClaudeResets
+                      ? t('claude_quota.limit_resets_subtitle')
+                      : t('codex_quota.reset_credits_card_subtitle')}
+                  </span>
                 </div>
               </div>
               <div className={styles.quotaResetHeaderActions}>
-                {detailView.quota.resetCreditsAvailableCount !== null ? (
+                {resetCreditsAvailableCount !== null ? (
                   <div className={styles.quotaResetCount} data-quota-reset-count="true">
                     <span>{t('codex_quota.reset_credits_available_label')}</span>
-                    <strong>{detailView.quota.resetCreditsAvailableCount}</strong>
+                    <strong>{resetCreditsAvailableCount}</strong>
                     <span className={styles.quotaResetCountUnit}>
                       {t('codex_quota.reset_credits_unit')}
                     </span>
                   </div>
                 ) : null}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className={styles.quotaResetAction}
-                  data-quota-reset-action="true"
-                  onClick={onResetQuota}
-                  disabled={resetQuotaDisabled}
-                >
-                  <IconRefreshCw size={14} />
-                  {t('codex_quota.reset_action_button')}
-                </Button>
+                {isClaudeResets ? null : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className={styles.quotaResetAction}
+                    data-quota-reset-action="true"
+                    onClick={onResetQuota}
+                    disabled={resetQuotaDisabled}
+                  >
+                    <IconRefreshCw size={14} />
+                    {t('codex_quota.reset_action_button')}
+                  </Button>
+                )}
               </div>
             </div>
-            {detailView.quota.resetCreditsAvailableCount === 0 ? (
+            {resetCreditsAvailableCount === 0 ? (
               <div className={styles.quotaResetAvailabilityNote} role="status">
                 {t('codex_quota.reset_credits_unavailable_label')}
               </div>
@@ -378,7 +391,11 @@ export function AccountQuotaTab({
                       key={`${item.id}:${item.expiresAtMs}`}
                       className={styles.quotaResetExpiryItem}
                     >
-                      <span>{t('codex_quota.reset_credit_expiry_item', { index: index + 1 })}</span>
+                      <span>
+                        {item.label ??
+                          t('codex_quota.reset_credit_expiry_item', { index: index + 1 })}
+                        {item.count && item.count > 1 ? ` ×${item.count}` : ''}
+                      </span>
                       <strong data-quota-reset-credit-expiry={item.id}>
                         {renderResetCreditRemainingText(item.expiresAtMs, nowMs, t)}{' '}
                         · {formatQuotaResetTimestamp(item.expiresAtMs, i18n.language)}

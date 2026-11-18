@@ -160,6 +160,17 @@ export const CLAUDE_REQUEST_HEADERS = {
   'anthropic-beta': 'oauth-2025-04-20',
 };
 
+// Undocumented Claude limit-reset grants; the same request Claude Code sends.
+export const CLAUDE_LIMIT_RESETS_URL = `${CLAUDE_USAGE_URL}?cedar_ember=1&skip_spend=1`;
+
+export const CLAUDE_LIMIT_RESETS_HEADERS = {
+  ...CLAUDE_REQUEST_HEADERS,
+  'User-Agent': 'claude-cli/2.1.321 (external, cli)',
+};
+
+export const CLAUDE_LIMIT_RESETS_REFRESH_MS = 60 * 60 * 1000;
+export const CLAUDE_LIMIT_RESETS_BACKOFF_MS = 15 * 60 * 1000;
+
 export const CLAUDE_USAGE_WINDOW_KEYS = [
   { key: 'five_hour', id: 'five-hour', labelKey: 'claude_quota.five_hour' },
   { key: 'seven_day', id: 'seven-day', labelKey: 'claude_quota.seven_day' },

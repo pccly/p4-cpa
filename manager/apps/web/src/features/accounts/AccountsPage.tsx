@@ -10019,6 +10019,10 @@ export function AccountsPage() {
       history: verifiedAccountHistoryByRowKey.get(selectedRow.selectionKey) ?? null,
       valueRow,
       codexQuota: selectedCodexQuota,
+      claudeQuota:
+        selectedRow.provider === CLAUDE_CONFIG.type
+          ? getCredentialScopedQuotaState(claudeQuota, selectedRow.raw)
+          : undefined,
       xaiQuota:
         selectedRow.provider === XAI_CONFIG.type
           ? getCredentialScopedQuotaState(xaiQuota, selectedRow.raw)

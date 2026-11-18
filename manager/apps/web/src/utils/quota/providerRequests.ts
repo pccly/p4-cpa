@@ -6,6 +6,7 @@ import type {
   AntigravityQuotaSummaryPayload,
   AuthFileItem,
   ClaudeExtraUsage,
+  ClaudeLimitResets,
   ClaudeProfileResponse,
   ClaudeQuotaWindow,
   ClaudeUsagePayload,
@@ -28,6 +29,8 @@ import type {
 import { apiCallApi, getApiCallErrorMessage } from '@/services/api/apiCall';
 import { createScopedApiRequestConfig, type ApiClientRequestScope } from '@/services/api/client';
 import { isRecord } from '@/utils/helpers';
+import { fetchClaudeLimitResets } from './claudeLimitResets';
+import { getQuotaCredentialStoreKey } from './credentialScope';
 import { sha256Hex } from '@/utils/apiKeyHash';
 import {
   antigravitySubscriptionApi,
@@ -136,6 +139,7 @@ export type ClaudeQuotaData = {
   quotaInventoryObserved: boolean;
   extraUsage?: ClaudeExtraUsage | null;
   planType?: string | null;
+  limitResets?: ClaudeLimitResets | null;
   rateLimited?: boolean;
 };
 
@@ -1141,7 +1145,7 @@ export const fetchClaudeQuota = async (
   }
 
   const requestConfig = requestScope ? createScopedApiRequestConfig(requestScope) : undefined;
-  const [usageResult, profileResult] = await Promise.allSettled([
+  const [usageResult, profileResult, limitResetsResult] = await Promise.allSettled([
     apiCallApi.request(
       {
         authIndex,
@@ -1160,6 +1164,7 @@ export const fetchClaudeQuota = async (
       },
       requestConfig
     ),
+    fetchClaudeLimitResets(authIndex, requestScope, getQuotaCredentialStoreKey(file)),
   ]);
 
   if (usageResult.status === 'rejected') {
@@ -1197,6 +1202,7 @@ export const fetchClaudeQuota = async (
     quotaInventoryObserved: hasClaudeQuotaInventory(payload, windows),
     extraUsage: payload.extra_usage,
     planType,
+    limitResets: limitResetsResult.status === 'fulfilled' ? limitResetsResult.value : null,
     ...(profileRateLimited ? { rateLimited: true } : {}),
   };
 };

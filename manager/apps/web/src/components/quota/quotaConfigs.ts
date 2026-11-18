@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next';
 import type {
   AntigravityQuotaState,
   AuthFileItem,
+  ClaudeLimitResets,
   ClaudeQuotaState,
   CodexQuotaState,
   CodexQuotaWindow,
@@ -61,6 +62,8 @@ import {
   getQuotaCredentialStoreKey,
   scopeQuotaStateToCredential,
 } from '@/utils/quota/credentialScope';
+import { peekClaudeLimitResets } from '@/utils/quota/claudeLimitResets';
+import { normalizeAuthIndex } from '@/utils/authIndex';
 
 type QuotaType = 'antigravity' | 'claude' | 'codex' | 'kimi' | 'xai' | 'devin' | 'meta';
 
@@ -620,6 +623,13 @@ export const getSortedCodexResetCreditExpiries = (
     .filter((credit): credit is CodexResetCreditExpiryInfo => Boolean(credit))
     .sort((left, right) => left.expiresAtMs - right.expiresAtMs || left.id.localeCompare(right.id));
 
+const peekCachedClaudeLimitResets = (file?: AuthFileItem): ClaudeLimitResets | null => {
+  const authIndex = file ? normalizeAuthIndex(file['auth_index'] ?? file.authIndex) : null;
+  return file && authIndex
+    ? peekClaudeLimitResets(authIndex, getQuotaCredentialStoreKey(file))
+    : null;
+};
+
 export const CLAUDE_CONFIG: QuotaConfig<ClaudeQuotaState, ClaudeQuotaData> = {
   type: 'claude',
   i18nPrefix: 'claude_quota',
@@ -628,6 +638,7 @@ export const CLAUDE_CONFIG: QuotaConfig<ClaudeQuotaState, ClaudeQuotaData> = {
   buildLoadingState: (file) => ({
     status: 'loading',
     windows: [],
+    limitResets: peekCachedClaudeLimitResets(file),
     ...buildQuotaCredentialIdentity(file),
   }),
   buildSuccessState: (data, file) => ({
@@ -636,12 +647,14 @@ export const CLAUDE_CONFIG: QuotaConfig<ClaudeQuotaState, ClaudeQuotaData> = {
     quotaInventoryObserved: data.quotaInventoryObserved,
     extraUsage: data.extraUsage,
     planType: data.planType,
+    limitResets: data.limitResets ?? null,
     ...buildQuotaCredentialIdentity(file),
     fetchedAtMs: Date.now(),
   }),
   buildErrorState: (message, status, file) => ({
     status: 'error',
     windows: [],
+    limitResets: peekCachedClaudeLimitResets(file),
     error: message,
     errorStatus: status,
     ...buildQuotaCredentialIdentity(file),

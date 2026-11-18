@@ -5,7 +5,12 @@ const { mocks } = vi.hoisted(() => ({
   mocks: {
     getSubscription: vi.fn(),
     request: vi.fn(),
+    fetchClaudeLimitResets: vi.fn(),
   },
+}));
+
+vi.mock('./claudeLimitResets', () => ({
+  fetchClaudeLimitResets: mocks.fetchClaudeLimitResets,
 }));
 
 vi.mock('@/services/api/apiCall', () => ({
@@ -76,6 +81,8 @@ const completedXaiInferenceResponse = () => ({
 });
 
 beforeEach(() => {
+  mocks.fetchClaudeLimitResets.mockReset();
+  mocks.fetchClaudeLimitResets.mockResolvedValue(null);
   mocks.getSubscription.mockReset();
   mocks.getSubscription.mockResolvedValue(null);
   mocks.request.mockReset();
@@ -1011,6 +1018,8 @@ describe('fetchClaudeQuota', () => {
       CLAUDE_USAGE_URL,
       CLAUDE_PROFILE_URL,
     ]);
+    expect(mocks.fetchClaudeLimitResets).toHaveBeenCalledWith('claude-1', undefined, expect.any(String));
+    expect(result.limitResets).toBeNull();
     expect(result.windows.map((window) => window.id)).toEqual([
       'five-hour',
       'seven-day',
@@ -1029,6 +1038,26 @@ describe('fetchClaudeQuota', () => {
       id: 'iguana-necktie',
       labelKey: 'claude_quota.iguana_necktie',
     });
+  });
+
+  it('keeps Claude quota windows when limit resets cannot be read', async () => {
+    mocks.fetchClaudeLimitResets.mockRejectedValueOnce(new Error('rate limited'));
+    mocks.request
+      .mockResolvedValueOnce({
+        statusCode: 200,
+        hasStatusCode: true,
+        header: {},
+        bodyText: '',
+        body: { five_hour: { utilization: 12, resets_at: '2026-07-01T10:00:00Z' } },
+      })
+      .mockRejectedValueOnce(new Error('profile unavailable'));
+
+    const result = await fetchClaudeQuota(
+      { name: 'claude-x.json', type: 'claude', authIndex: 'claude-x' },
+      t
+    );
+    expect(result.windows.map((window) => window.id)).toContain('five-hour');
+    expect(result.limitResets).toBeNull();
   });
 
   it('preserves usage windows and marks rateLimited when profile returns 429', async () => {

@@ -16,6 +16,7 @@ import {
   buildDrilldownPreview,
   buildKeyAnomalies,
   buildModelKeyDistribution,
+  buildModelRows,
   buildMonitoringDetailUrl,
   buildProviderRows,
   buildUsageMatrix,
@@ -35,6 +36,7 @@ import {
   fillUsageTimelineBuckets,
   computeCacheHitRate,
   computeRowAverageCostPerCall,
+  computeRowsAverageOutputTokensPerSecond,
   computeRowCacheHitRate,
   getUsageCacheTokens,
   getUsagePresentationRangeScopeKey,
@@ -202,6 +204,7 @@ describe('usage analytics request model', () => {
       summary_profile: 'compact',
       timeline: true,
       model_stats: true,
+      model_throughput: true,
       api_key_stats: true,
       granularity: 'day',
     });
@@ -1962,5 +1965,41 @@ describe('usage anomaly drilldown', () => {
     ).toBe(
       `/monitoring?from_ms=${NOW_MS}&to_ms=${NOW_MS + HOUR_MS}&model=gpt-4o&api_key_hash=abcdef1234&provider=openai&auth_file=codex-auth.json&project_id=project-1&request_type=codex&status=failed&search=req-42&min_latency_ms=10000&cache_status=hit`
     );
+  });
+});
+
+describe('model throughput', () => {
+  const stat = (model: string, outputTokens?: number, latencyMs?: number) => ({
+    model,
+    calls: 1,
+    success_calls: 1,
+    failure_calls: 0,
+    success_rate: 1,
+    input_tokens: 0,
+    output_tokens: outputTokens ?? 0,
+    cached_tokens: 0,
+    cache_read_tokens: 0,
+    cache_creation_tokens: 0,
+    total_tokens: outputTokens ?? 0,
+    cost: 0,
+    throughput_output_tokens: outputTokens,
+    throughput_latency_ms: latencyMs,
+  });
+
+  it('derives per-model and latency-weighted overall output TPS', () => {
+    const rows = buildModelRows([
+      stat('fast', 600, 2_000),
+      stat('slow', 100, 2_000),
+      stat('untimed', 0, 0),
+      stat('legacy'),
+    ]);
+    const byId = new Map(rows.map((row) => [row.id, row]));
+
+    expect(byId.get('fast')?.averageOutputTokensPerSecond).toBe(300);
+    expect(byId.get('slow')?.averageOutputTokensPerSecond).toBe(50);
+    expect(byId.get('untimed')?.averageOutputTokensPerSecond).toBeNull();
+    expect(byId.get('legacy')?.averageOutputTokensPerSecond).toBeNull();
+    expect(computeRowsAverageOutputTokensPerSecond(rows)).toBe(175);
+    expect(computeRowsAverageOutputTokensPerSecond([])).toBeNull();
   });
 });

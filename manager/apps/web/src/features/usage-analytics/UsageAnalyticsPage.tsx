@@ -98,6 +98,7 @@ import {
   buildUsageTrendSummaryCards,
   buildCredentialDetailCards,
   formatUsageDurationMs,
+  formatUsageTokensPerSecond,
 } from './usageAnalyticsPresentation';
 import styles from './UsageAnalyticsPage.module.scss';
 
@@ -3729,7 +3730,7 @@ function RankTable({
   onSelect: (row: UsageRankRow) => void;
   onCopyApiKey?: (row: UsageRankRow) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const entityHeader =
     type === 'model'
       ? t('usage_analytics.col_model')
@@ -3760,6 +3761,11 @@ function RankTable({
             <th>{t('usage_analytics.metric_estimated_cost')}</th>
             {type !== 'credential' ? (
               <th>{t('usage_analytics.metric_average_cost_per_call')}</th>
+            ) : null}
+            {type === 'model' ? (
+              <th title={t('usage_analytics.model_average_output_tps_meta')}>
+                {t('usage_analytics.col_average_output_tps')}
+              </th>
             ) : null}
             {type !== 'credential' ? <th>{t('usage_analytics.metric_failure_count')}</th> : null}
             <th>{t('usage_analytics.success_rate')}</th>
@@ -3813,6 +3819,11 @@ function RankTable({
                 <td>{formatMetricValue('estimatedCost', row.estimatedCost)}</td>
                 {type !== 'credential' ? (
                   <td>{formatMetricValue('estimatedCost', computeRowAverageCostPerCall(row))}</td>
+                ) : null}
+                {type === 'model' ? (
+                  <td>
+                    {formatUsageTokensPerSecond(row.averageOutputTokensPerSecond, i18n.language)}
+                  </td>
                 ) : null}
                 {type !== 'credential' ? (
                   <td className={row.failureCount > 0 ? styles.tonebad : ''}>
@@ -3880,6 +3891,12 @@ function DetailPanel({
           <div>
             <span>{t('usage_analytics.cache_read_rate')}</span>
             <strong>{formatPercent(computeRowCacheHitRate(row))}</strong>
+          </div>
+          <div>
+            <span>{t('usage_analytics.model_average_output_tps')}</span>
+            <strong>
+              {formatUsageTokensPerSecond(row.averageOutputTokensPerSecond, i18n.language)}
+            </strong>
           </div>
           <div>
             <span>{t('usage_analytics.metric_failure_count')}</span>

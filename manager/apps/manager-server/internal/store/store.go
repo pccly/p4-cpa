@@ -75,6 +75,7 @@ type AnalyticsFilter = usageevent.AnalyticsFilter
 type TimelinePoint = usageevent.TimelinePoint
 type LatencyPercentiles = usageevent.LatencyPercentiles
 type LatencySummary = usageevent.LatencySummary
+type ModelThroughput = usageevent.ModelThroughput
 type HourlyPoint = usageevent.HourlyPoint
 type FilterOptionValues = usageevent.FilterOptionValues
 type FilterSelectorValues = usageevent.FilterSelectorValues
@@ -963,6 +964,10 @@ func (s *Store) LatencyPercentilesWithFilter(ctx context.Context, filter Analyti
 
 func (s *Store) LatencySummaryWithFilter(ctx context.Context, filter AnalyticsFilter) (LatencySummary, error) {
 	return s.UsageEvents.LatencySummaryWithFilter(ctx, filter)
+}
+
+func (s *Store) ModelThroughputWithFilter(ctx context.Context, filter AnalyticsFilter) ([]ModelThroughput, error) {
+	return s.UsageEvents.ModelThroughputWithFilter(ctx, filter)
 }
 
 func (s *Store) HourlyDistributionWithFilter(ctx context.Context, filter AnalyticsFilter, location *time.Location) ([]HourlyPoint, error) {

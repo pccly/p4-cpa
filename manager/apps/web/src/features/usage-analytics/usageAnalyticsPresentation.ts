@@ -3,6 +3,7 @@ import { formatCompactUsd } from '@/utils/usage';
 import {
   computeCacheHitRate,
   computeRowCacheHitRate,
+  computeRowsAverageOutputTokensPerSecond,
   formatMetricValue,
   getUsageCacheTokens,
   USAGE_MODEL_LONG_TAIL_SHARE,
@@ -129,6 +130,16 @@ export const formatUsageDurationMs = (value: number | null | undefined) => {
   if (parsed < 1000) return `${Math.round(parsed)}ms`;
 
   return `${formatSecondValue(parsed / 1000)}s`;
+};
+
+export const formatUsageTokensPerSecond = (value: number | null | undefined, locale: string) => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return '-';
+  const maximumFractionDigits = value < 1 ? 2 : value < 10 ? 1 : 0;
+  try {
+    return new Intl.NumberFormat(locale, { maximumFractionDigits }).format(value);
+  } catch {
+    return value.toFixed(maximumFractionDigits);
+  }
 };
 
 const getMaxTimelinePoint = (
@@ -414,6 +425,7 @@ export const buildUsageModelSummaryCards = ({
   const longTailShare = modelRows
     .filter((row) => row.share < USAGE_MODEL_LONG_TAIL_SHARE)
     .reduce((sum, row) => sum + row.share, 0);
+  const averageOutputTokensPerSecond = computeRowsAverageOutputTokensPerSecond(modelRows);
   return [
     {
       accent: 'teal',
@@ -452,6 +464,13 @@ export const buildUsageModelSummaryCards = ({
       label: t('usage_analytics.model_long_tail_share'),
       meta: t('usage_analytics.model_long_tail_meta'),
       value: formatPercent(longTailShare),
+    },
+    {
+      accent: 'cyan',
+      icon: 'latency',
+      label: t('usage_analytics.model_average_output_tps'),
+      meta: t('usage_analytics.model_average_output_tps_meta'),
+      value: formatUsageTokensPerSecond(averageOutputTokensPerSecond, locale),
     },
     {
       accent: 'amber',

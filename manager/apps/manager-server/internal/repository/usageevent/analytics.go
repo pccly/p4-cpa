@@ -72,6 +72,15 @@ type LatencySummary struct {
 	P95TTFTMS    sql.NullFloat64
 }
 
+// ModelThroughput sums output tokens and latency over successful requests that
+// report both, so callers can derive an average output tokens-per-second rate.
+type ModelThroughput struct {
+	Model        string
+	OutputTokens int64
+	LatencyMS    int64
+	Samples      int64
+}
+
 type FilterOptionValues struct {
 	Providers        []string
 	AuthFiles        []string
@@ -987,6 +996,31 @@ where sample_number = ((sample_count * 95) + 99) / 100`, where, where)
 		return LatencySummary{}, err
 	}
 	return summary, nil
+}
+
+func (r *repository) ModelThroughputWithFilter(ctx context.Context, filter AnalyticsFilter) ([]ModelThroughput, error) {
+	where, args := analyticsWhere(filter)
+	rows, err := r.db.QueryContext(ctx, `select
+	`+analyticsModelExpr+` as model_value,
+	coalesce(sum(output_tokens), 0),
+	coalesce(sum(latency_ms), 0),
+	count(*)
+from usage_events `+where+` and coalesce(failed, 0) = 0 and output_tokens > 0 and latency_ms > 0
+group by model_value`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []ModelThroughput
+	for rows.Next() {
+		var row ModelThroughput
+		if err := rows.Scan(&row.Model, &row.OutputTokens, &row.LatencyMS, &row.Samples); err != nil {
+			return nil, err
+		}
+		result = append(result, row)
+	}
+	return result, rows.Err()
 }
 
 func percentile95(values []float64) (float64, bool) {

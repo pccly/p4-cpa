@@ -65,6 +65,35 @@ polling remain in place. CLIProxyAPI now keeps a local bbolt key-value store at
 downstream responses only when a client requests zstd or gzip. Take the usual cold
 backup before deployment.
 
+## P4 CPA 1.0.3 integration
+
+Version **1.0.3** integrates CLIProxyAPI **v8.0.77**
+(`a5e8f69e56309e1ef6d6872e667da81fdfbce2ce`). CPA Manager Plus has no release after
+**v1.14.10** (`a67ed8834a914ab24c36d2490fa6bb6d4166724c`), so the manager baseline is
+unchanged. Use these source commits as the comparison base for the next upstream
+integration.
+
+This update includes GPT-6.2 and Gemini 4 model entries, path, regex, role and user
+text targets for payload replace rules, payload rules enforced as the final request
+barrier, Retry-After and RetryInfo handling for Codex and Gemini cooldowns, terminal
+handling of expired Claude refresh tokens, backoff for rejected refresh recovery,
+PDF, audio and tool-result media translation fixes, zero-output stream failures before
+response commit, an opt-in `server.shutdown-timeout` for draining requests, and the
+Muse Code relay. Upstream proxy code now uses moego JSON and regexp packages.
+
+P4's reset-first routing, extra-usage controls, subscription quota blocks, branding,
+HTTP-default Codex transport, and disabled update polling remain in place. Two
+upstream tests fail on the pristine v8.0.77 source as well as here:
+`TestModelsWithClientVersionReturnsCodexCatalog` and the timing-sensitive
+`internal/wstunnel` hub tests. No database maintenance is required.
+
+P4 CPA 1.0.3 also adds an average output tokens-per-second measure to the Usage
+Analytics model summary, model table and model detail. It divides total output
+tokens by total request latency over successful requests that report both, so it
+is the latency-weighted mean of the per-request TPS shown in realtime monitoring.
+The manager computes it from retained raw usage events only when the Models tab
+requests `model_throughput`.
+
 ## Independent releases
 
 P4 CPA no longer displays upstream release links, latest-version badges, or update

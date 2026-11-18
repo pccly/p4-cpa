@@ -156,6 +156,7 @@ type Include struct {
 	ModelShare         bool              `json:"model_share"`
 	ChannelShare       bool              `json:"channel_share"`
 	ModelStats         bool              `json:"model_stats"`
+	ModelThroughput    bool              `json:"model_throughput"`
 	FailureSources     bool              `json:"failure_sources"`
 	AccountStats       bool              `json:"account_stats"`
 	CredentialStats    bool              `json:"credential_stats"`
@@ -559,6 +560,10 @@ type ModelStat struct {
 	CacheHitRate        float64 `json:"cache_hit_rate"`
 	TotalTokens         int64   `json:"total_tokens"`
 	Cost                float64 `json:"cost"`
+	// Throughput fields are present only when include.model_throughput is set.
+	ThroughputOutputTokens *int64   `json:"throughput_output_tokens,omitempty"`
+	ThroughputLatencyMS    *int64   `json:"throughput_latency_ms,omitempty"`
+	OutputTokensPerSecond  *float64 `json:"output_tokens_per_second,omitempty"`
 }
 
 type ChannelShareRow struct {
@@ -1085,6 +1090,15 @@ func (s *Service) analytics(ctx context.Context, req Request) (Response, error) 
 		})
 	}
 
+	var modelThroughput []store.ModelThroughput
+	if req.Include.ModelStats && req.Include.ModelThroughput {
+		queries.Go(func(queryCtx context.Context) error {
+			var queryErr error
+			modelThroughput, queryErr = s.store.ModelThroughputWithFilter(queryCtx, filter)
+			return queryErr
+		})
+	}
+
 	var hourlyDistributionPoints []store.HourlyPoint
 	if req.Include.HourlyDistribution {
 		queries.Go(func(queryCtx context.Context) error {
@@ -1413,6 +1427,9 @@ func (s *Service) analytics(ctx context.Context, req Request) (Response, error) 
 	}
 	if req.Include.ModelStats {
 		response.ModelStats = buildModelStats(modelStats, prices)
+		if req.Include.ModelThroughput {
+			applyModelThroughput(response.ModelStats, modelThroughput)
+		}
 	}
 	if req.Include.ChannelShare {
 		response.ChannelShare = buildChannelShare(channelStats, prices)
@@ -1640,6 +1657,9 @@ func buildAnalyticsCoverage(
 		}
 		if req.Include.HourlyDistribution || req.Include.Heatmap || req.Include.TaskBuckets {
 			appendLimitation("distribution_metrics_require_raw_events")
+		}
+		if req.Include.ModelStats && req.Include.ModelThroughput {
+			appendLimitation("model_throughput_requires_raw_events")
 		}
 		if req.Include.FailureSources || req.Include.RecentFailures > 0 {
 			appendLimitation("failure_metrics_require_raw_events")
@@ -3002,6 +3022,27 @@ func buildModelStats(stats []store.ModelStat, prices map[string]store.ModelPrice
 		})
 	}
 	return result
+}
+
+func applyModelThroughput(rows []ModelStat, throughput []store.ModelThroughput) {
+	type totals struct{ outputTokens, latencyMS int64 }
+	byModel := make(map[string]totals, len(throughput))
+	for _, sample := range throughput {
+		entry := byModel[sample.Model]
+		entry.outputTokens += sample.OutputTokens
+		entry.latencyMS += sample.LatencyMS
+		byModel[sample.Model] = entry
+	}
+	for i := range rows {
+		entry := byModel[rows[i].Model]
+		outputTokens, latencyMS := entry.outputTokens, entry.latencyMS
+		rows[i].ThroughputOutputTokens = &outputTokens
+		rows[i].ThroughputLatencyMS = &latencyMS
+		if outputTokens > 0 && latencyMS > 0 {
+			rate := float64(outputTokens) * 1000 / float64(latencyMS)
+			rows[i].OutputTokensPerSecond = &rate
+		}
+	}
 }
 
 type aggregatedModelStat struct {

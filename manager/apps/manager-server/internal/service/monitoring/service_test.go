@@ -239,6 +239,64 @@ func TestAnalyticsBuildsIncludedSections(t *testing.T) {
 	}
 }
 
+func TestAnalyticsModelStatsIncludeThroughputOnRequest(t *testing.T) {
+	db := newMonitoringTestStore(t)
+	ctx := context.Background()
+	fromMS := int64(1_778_000_000_000)
+	toMS := fromMS + 60*60*1000
+	fast := int64(1_000)
+	slow := int64(3_000)
+
+	_, err := db.InsertEvents(ctx, []usage.Event{
+		monitoringEvent("throughput-a1", fromMS+1_000, "gpt-a", "auth-1", "source-a", false, 10, 200, 0, 0, 210, &fast),
+		monitoringEvent("throughput-a2", fromMS+2_000, "gpt-a", "auth-1", "source-a", false, 10, 400, 0, 0, 410, &slow),
+		monitoringEvent("throughput-a3", fromMS+3_000, "gpt-a", "auth-1", "source-a", true, 10, 900, 0, 0, 910, &fast),
+		monitoringEvent("throughput-b1", fromMS+4_000, "gpt-b", "auth-2", "source-b", false, 10, 30, 0, 0, 40, nil),
+	})
+	if err != nil {
+		t.Fatalf("insert events: %v", err)
+	}
+
+	includeFailed := true
+	request := Request{
+		FromMS:  fromMS,
+		ToMS:    toMS,
+		NowMS:   toMS,
+		Filters: Filters{IncludeFailed: &includeFailed},
+		Include: Include{ModelStats: true},
+	}
+	resp, err := New(db).Analytics(ctx, request)
+	if err != nil {
+		t.Fatalf("analytics: %v", err)
+	}
+	for _, row := range resp.ModelStats {
+		if row.OutputTokensPerSecond != nil || row.ThroughputOutputTokens != nil || row.ThroughputLatencyMS != nil {
+			t.Fatalf("throughput without include = %#v", row)
+		}
+	}
+
+	request.Include.ModelThroughput = true
+	resp, err = New(db).Analytics(ctx, request)
+	if err != nil {
+		t.Fatalf("analytics with throughput: %v", err)
+	}
+	byModel := map[string]ModelStat{}
+	for _, row := range resp.ModelStats {
+		byModel[row.Model] = row
+	}
+	a := byModel["gpt-a"]
+	if a.ThroughputOutputTokens == nil || *a.ThroughputOutputTokens != 600 ||
+		a.ThroughputLatencyMS == nil || *a.ThroughputLatencyMS != 4_000 ||
+		a.OutputTokensPerSecond == nil || math.Abs(*a.OutputTokensPerSecond-150) > 0.000001 {
+		t.Fatalf("gpt-a throughput = %#v", a)
+	}
+	b := byModel["gpt-b"]
+	if b.ThroughputOutputTokens == nil || *b.ThroughputOutputTokens != 0 ||
+		b.ThroughputLatencyMS == nil || *b.ThroughputLatencyMS != 0 || b.OutputTokensPerSecond != nil {
+		t.Fatalf("gpt-b throughput = %#v", b)
+	}
+}
+
 func TestAnalyticsHeatmapIncludesTopContributors(t *testing.T) {
 	db := newMonitoringTestStore(t)
 	ctx := context.Background()
@@ -3541,6 +3599,28 @@ func TestAnalyticsReportsArchivedCoverageAndKeepsProjectionBackedCoreExact(t *te
 		compact.Coverage.RawComplete || !compact.Coverage.CoreAggregateUsed || compact.Coverage.RawEventCount != 1 ||
 		compact.Coverage.RawDeletedEventCount != 2 || len(compact.Coverage.FidelityLimitations) != 0 {
 		t.Fatalf("compact coverage = %#v", compact.Coverage)
+	}
+	if slices.Contains(compact.Coverage.FidelityLimitations, "model_throughput_requires_raw_events") {
+		t.Fatalf("compact coverage without throughput = %#v", compact.Coverage)
+	}
+
+	throughput, err := New(db, true).Analytics(ctx, Request{
+		FromMS: fromMS,
+		ToMS:   toMS,
+		Include: Include{
+			Summary:         true,
+			SummaryProfile:  "compact",
+			ModelStats:      true,
+			ModelThroughput: true,
+			Granularity:     "hour",
+		},
+	})
+	if err != nil {
+		t.Fatalf("throughput coverage analytics: %v", err)
+	}
+	if throughput.Coverage == nil ||
+		!slices.Contains(throughput.Coverage.FidelityLimitations, "model_throughput_requires_raw_events") {
+		t.Fatalf("throughput coverage = %#v", throughput.Coverage)
 	}
 
 	partial, err := New(db, true).Analytics(ctx, Request{

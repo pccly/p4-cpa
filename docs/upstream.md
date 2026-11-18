@@ -112,6 +112,15 @@ fetches it in a separate request at most once an hour per credential, backs off 
 429 and errors, and never lets it affect the quota windows. Resets are redeemed on
 claude.ai; the manager does not spend them.
 
+## P4 CPA 1.0.5
+
+Version **1.0.5** keeps the 1.0.4 upstream baselines. It detects the Claude Ultra
+plan (formerly Max 20x) from the profile's `default_claude_max_20x` rate-limit tier,
+shows the Codex-style limit-reset counter on Claude rows in the account list, and
+keeps `https` (and P4 Code on the shared port) serving during backups: only the
+proxy and manager stop briefly while the data is cloned, and compression runs after
+they restart.
+
 ## Independent releases
 
 P4 CPA no longer displays upstream release links, latest-version badges, or update

@@ -727,7 +727,12 @@ const resolveClaudePlanType = (profile: ClaudeProfileResponse | null): string | 
   if (!profile) return null;
 
   const hasClaudeMax = normalizeFlagValue(profile.account?.has_claude_max);
-  if (hasClaudeMax) return 'plan_max';
+  if (hasClaudeMax) {
+    // Ultra (formerly Max 20x) keeps the default_claude_max_20x rate-limit tier.
+    const tier = normalizeStringValue(profile.organization?.rate_limit_tier)?.toLowerCase() ?? '';
+    if (tier.includes('max_20x') || tier.includes('ultra')) return 'plan_max20';
+    return 'plan_max';
+  }
 
   const hasClaudePro = normalizeFlagValue(profile.account?.has_claude_pro);
   if (hasClaudePro) return 'plan_pro';

@@ -22,8 +22,8 @@ export const CLAUDE_PLAN_DESCRIPTORS: Readonly<Record<string, PlanResolverDescri
   max: descriptor('max', 'plans.claude.max', 'Max'),
   plan_max5: descriptor('max_5x', 'plans.claude.max_5x', 'Max 5x'),
   max_5x: descriptor('max_5x', 'plans.claude.max_5x', 'Max 5x'),
-  plan_max20: descriptor('max_20x', 'plans.claude.max_20x', 'Max 20x'),
-  max_20x: descriptor('max_20x', 'plans.claude.max_20x', 'Max 20x'),
+  plan_max20: descriptor('max_20x', 'plans.claude.max_20x', 'Ultra'),
+  max_20x: descriptor('max_20x', 'plans.claude.max_20x', 'Ultra'),
   plan_team: descriptor('team', 'plans.claude.team', 'Team'),
   team: descriptor('team', 'plans.claude.team', 'Team'),
 };

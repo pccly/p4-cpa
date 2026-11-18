@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -28,6 +29,31 @@ def compose(*args, **kwargs):
     return run('docker', 'compose', *args, **kwargs)
 
 
+# Front-end services keep serving during a backup; only services that own the
+# SQLite database and credential files are stopped for a consistent copy.
+BACKUP_STOP_EXEMPT = {'https'}
+
+
+def snapshot(paths, staging):
+    """Copy paths into staging. APFS clones are instant, so the stop window stays short."""
+    for name in paths:
+        source, target = ROOT / name, staging / name
+        if sys.platform == 'darwin':
+            try:
+                subprocess.run(['cp', '-c', '-R', '-p', str(source), str(target)], check=True,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                continue
+            except subprocess.CalledProcessError:
+                if target.is_dir():
+                    shutil.rmtree(target)
+                elif target.exists():
+                    target.unlink()
+        if source.is_dir():
+            shutil.copytree(source, target, symlinks=True)
+        else:
+            shutil.copy2(source, target)
+
+
 def backup(on_created=None):
     destination = Path(os.environ.get('BACKUP_DIR', str(Path.home() / 'Backups/p4-cpa'))).expanduser().resolve()
     if destination == ROOT or ROOT in destination.parents:
@@ -44,19 +70,40 @@ def backup(on_created=None):
     compose('config', '--quiet')
     revision = run('git', 'rev-parse', 'HEAD', capture=True).strip()
     running = compose('ps', '--status', 'running', '--services', capture=True).split()
+    stopped = [service for service in running if service not in BACKUP_STOP_EXEMPT]
     destination.mkdir(parents=True, exist_ok=True, mode=0o700)
+    # Backups are serialized by the operations lock, so leftover staging is from a killed run.
+    for leftover in destination.glob('.p4-cpa-staging-*'):
+        if leftover.is_dir() and not leftover.is_symlink():
+            shutil.rmtree(leftover)
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
-    archive = destination / f'p4-cpa-{stamp}-{uuid.uuid4().hex[:8]}.tar.gz'
+    token = uuid.uuid4().hex[:8]
+    archive = destination / f'p4-cpa-{stamp}-{token}.tar.gz'
     partial = archive.with_suffix('.partial')
+    staging = destination / f'.p4-cpa-staging-{stamp}-{token}'
+    restart_error = None
     try:
-        if running:
-            compose('stop', '--timeout', '30', *running)
-        # Docker stop has completed, so SQLite and auth files are now quiescent.
+        staging.mkdir(mode=0o700)
+        try:
+            if stopped:
+                compose('stop', '--timeout', '30', *stopped)
+            # Docker stop has completed, so SQLite and auth files are now quiescent.
+            snapshot(paths, staging)
+        finally:
+            # Restore every service that was running (a no-op for exempt ones still up),
+            # including after a snapshot failure.
+            if stopped:
+                try:
+                    compose('start', '--wait', '--wait-timeout', '120', *running)
+                except Exception as error:  # Finish the archive first; the snapshot is complete.
+                    restart_error = error
+                    print(f'Restart after backup snapshot failed: {error}', file=sys.stderr, flush=True)
+        # The services are back; compress the quiescent snapshot.
         with partial.open('xb') as output:
             os.chmod(partial, 0o600)
             with tarfile.open(fileobj=output, mode='w:gz') as tar:
                 for name in paths:
-                    tar.add(ROOT / name, arcname=name)
+                    tar.add(staging / name, arcname=name)
                 metadata = json.dumps({'commit': revision, 'createdAt': stamp}).encode()
                 info = tarfile.TarInfo('p4-cpa-backup.json')
                 info.size, info.mode = len(metadata), 0o600
@@ -65,9 +112,10 @@ def backup(on_created=None):
         if on_created:
             on_created(archive)
     finally:
-        # Restore only services that were running, including after an archive failure.
-        if running:
-            compose('start', '--wait', '--wait-timeout', '120', *running)
+        if staging.exists():
+            shutil.rmtree(staging)
+    if restart_error is not None:
+        raise restart_error
     print(f'Backup: {archive}', flush=True)
     # Prune only this script's completed archives, after a successful backup/restart.
     pattern = re.compile(r'p4-cpa-\d{8}T\d{6}Z-[0-9a-f]{8}\.tar\.gz')

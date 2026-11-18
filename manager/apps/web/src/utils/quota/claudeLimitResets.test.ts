@@ -9,6 +9,7 @@ vi.mock('@/services/api/apiCall', () => ({
 }));
 
 import {
+  countAvailableClaudeLimitResets,
   fetchClaudeLimitResets,
   parseClaudeLimitResets,
   peekClaudeLimitResets,
@@ -253,5 +254,27 @@ describe('fetchClaudeLimitResets', () => {
     expect(peekClaudeLimitResets('claude-1', 'account-a')?.available).toBe(1);
     expect(peekClaudeLimitResets('claude-1', 'account-b')).toBeNull();
     expect(mocks.request).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('countAvailableClaudeLimitResets', () => {
+  it('counts resets usable at the given time and hides ineligible or empty blocks', () => {
+    const parsed = parseClaudeLimitResets(
+      {
+        cedar_ember: {
+          eligible: true,
+          grants: [
+            grant({ id: 'soon', resets_left: 2, ends_at: '2026-11-18T05:30:00Z' }),
+            grant({ id: 'later' }),
+            grant({ id: 'paused', paused: true }),
+          ],
+        },
+      },
+      NOW
+    )!;
+    expect(countAvailableClaudeLimitResets(parsed, NOW)).toBe(3);
+    expect(countAvailableClaudeLimitResets(parsed, Date.parse('2026-11-18T06:00:00Z'))).toBe(1);
+    expect(countAvailableClaudeLimitResets({ ...parsed, eligible: false }, NOW)).toBeNull();
+    expect(countAvailableClaudeLimitResets({ ...parsed, grants: [] }, NOW)).toBeNull();
   });
 });

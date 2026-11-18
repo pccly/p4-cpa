@@ -599,6 +599,17 @@ type DemoNestedModelRow = NonNullable<
 >[number];
 
 const safeRate = (part: number, total: number) => (total > 0 ? part / total : 0);
+
+const demoModelOutputTokensPerSecond: Record<string, number> = {
+  'gpt-4.1-mini': 142,
+  'claude-sonnet-4-5': 78,
+  'gemini-2.5-pro': 96,
+  'gpt-4.1': 88,
+  'gemini-2.5-flash': 211,
+  'qwen-plus': 64,
+  'claude-haiku-4-5': 167,
+  'grok-4-fast': 184,
+};
 const round2 = (value: number) => Number(value.toFixed(2));
 
 const splitTokens = (totalTokens: number) => {
@@ -1972,7 +1983,16 @@ const buildMonitoringAnalytics = (
     buildNestedModelRow('qwen-plus', 1160, 18, 980_000, 12.6, analyticsNow - 34 * minute),
     buildNestedModelRow('claude-haiku-4-5', 980, 12, 860_000, 18.4, analyticsNow - 52 * minute),
     buildNestedModelRow('grok-4-fast', 860, 14, 690_000, 12.2, analyticsNow - 55 * minute),
-  ].map(({ last_seen_ms: _lastSeenMs, ...row }) => row);
+  ].map(({ last_seen_ms: _lastSeenMs, ...row }) => {
+    const outputTokensPerSecond = demoModelOutputTokensPerSecond[row.model] ?? 60;
+    const throughputOutputTokens = Math.round(row.output_tokens * row.success_rate);
+    return {
+      ...row,
+      throughput_output_tokens: throughputOutputTokens,
+      throughput_latency_ms: Math.round((throughputOutputTokens / outputTokensPerSecond) * 1000),
+      output_tokens_per_second: outputTokensPerSecond,
+    };
+  });
   const summaryCalls = modelStats.reduce((sum, row) => sum + row.calls, 0);
   const summaryFailures = modelStats.reduce((sum, row) => sum + row.failure_calls, 0);
   const summarySuccess = summaryCalls - summaryFailures;

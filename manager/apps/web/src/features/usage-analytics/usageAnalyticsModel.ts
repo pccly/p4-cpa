@@ -202,6 +202,9 @@ export type UsageRankRow = {
   cacheHitRate?: number;
   estimatedCost: number;
   averageLatencyMs: number | null;
+  throughputOutputTokens?: number;
+  throughputLatencyMs?: number;
+  averageOutputTokensPerSecond?: number | null;
   lastSeenMs?: number;
   share: number;
   contexts?: UsageApiKeyContextRow[];
@@ -827,6 +830,7 @@ export const buildUsageAnalyticsInclude = (
       Object.assign(include, {
         timeline: true,
         model_stats: true,
+        model_throughput: true,
         api_key_stats: true,
       });
       break;
@@ -1349,6 +1353,17 @@ const normalizeMatrixLabel = (value: string | undefined, fallback = '-') => {
   return normalized || fallback;
 };
 
+const computeOutputTokensPerSecond = (outputTokens: number, latencyMs: number) =>
+  outputTokens > 0 && latencyMs > 0 ? outputTokens / (latencyMs / 1000) : null;
+
+// Latency-weighted mean of per-request output TPS: total output tokens over total
+// latency of successful requests that reported both.
+export const computeRowsAverageOutputTokensPerSecond = (rows: UsageRankRow[]) =>
+  computeOutputTokensPerSecond(
+    rows.reduce((sum, row) => sum + (row.throughputOutputTokens ?? 0), 0),
+    rows.reduce((sum, row) => sum + (row.throughputLatencyMs ?? 0), 0)
+  );
+
 export const buildModelRows = (
   rows: MonitoringAnalyticsModelStat[] = [],
   summary?: UsageSummaryMetrics
@@ -1376,6 +1391,12 @@ export const buildModelRows = (
       cacheHitRate: row.cache_hit_rate,
       estimatedCost: rowTotalCost(row),
       averageLatencyMs: null,
+      throughputOutputTokens: toNumber(row.throughput_output_tokens),
+      throughputLatencyMs: toNumber(row.throughput_latency_ms),
+      averageOutputTokensPerSecond: computeOutputTokensPerSecond(
+        toNumber(row.throughput_output_tokens),
+        toNumber(row.throughput_latency_ms)
+      ),
       share:
         totalCost > 0
           ? rowTotalCost(row) / totalCost

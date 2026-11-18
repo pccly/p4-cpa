@@ -1042,6 +1042,7 @@ export interface MonitoringAnalyticsInclude {
   model_share?: boolean;
   channel_share?: boolean;
   model_stats?: boolean;
+  model_throughput?: boolean;
   failure_sources?: boolean;
   account_stats?: boolean;
   credential_stats?: boolean;
@@ -1621,6 +1622,9 @@ export interface MonitoringAnalyticsModelStat {
   cache_hit_rate?: number;
   total_tokens: number;
   cost: number;
+  throughput_output_tokens?: number;
+  throughput_latency_ms?: number;
+  output_tokens_per_second?: number;
 }
 
 export interface MonitoringAnalyticsChannelShareRow {

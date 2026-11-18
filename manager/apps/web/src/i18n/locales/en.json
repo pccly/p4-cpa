@@ -4745,6 +4745,9 @@
     "api_key_lowest_success": "Lowest Success Client Key",
     "model_long_tail_share": "Long-tail Model Share",
     "model_long_tail_meta": "Models below 8% cost share combined",
+    "model_average_output_tps": "Avg output TPS",
+    "model_average_output_tps_meta": "Output tokens ÷ request time, successful requests",
+    "col_average_output_tps": "Avg TPS",
     "model_caller_distribution": "Caller Client Key Distribution",
     "rank_show_all": "Show all ({{count}})",
     "rank_collapse": "Collapse",
@@ -5403,7 +5406,7 @@
       "pro": "Pro",
       "max": "Max",
       "max_5x": "Max 5x",
-      "max_20x": "Max 20x",
+      "max_20x": "Ultra",
       "team": "Team"
     },
     "antigravity": {

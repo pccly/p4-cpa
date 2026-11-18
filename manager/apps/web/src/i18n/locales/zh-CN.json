@@ -4738,6 +4738,9 @@
     "api_key_lowest_success": "最低成功率客户端 Key",
     "model_long_tail_share": "长尾模型占比",
     "model_long_tail_meta": "成本占比 <8% 模型合计",
+    "model_average_output_tps": "平均输出 TPS",
+    "model_average_output_tps_meta": "输出 Token ÷ 请求耗时（仅成功请求）",
+    "col_average_output_tps": "平均 TPS",
     "model_caller_distribution": "调用方客户端 Key 分布",
     "rank_show_all": "显示全部（{{count}}）",
     "rank_collapse": "收起",
@@ -5396,7 +5399,7 @@
       "pro": "Pro",
       "max": "Max",
       "max_5x": "Max 5x",
-      "max_20x": "Max 20x",
+      "max_20x": "Ultra",
       "team": "Team"
     },
     "antigravity": {

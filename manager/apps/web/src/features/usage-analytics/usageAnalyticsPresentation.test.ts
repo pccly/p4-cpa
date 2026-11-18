@@ -15,6 +15,7 @@ import {
   buildUsageOverviewSummaryCards,
   buildUsageTrendSummaryCards,
   formatUsageDurationMs,
+  formatUsageTokensPerSecond,
 } from './usageAnalyticsPresentation';
 
 const t = ((key: string, options?: Record<string, unknown>) => {
@@ -262,9 +263,11 @@ describe('usageAnalyticsPresentation', () => {
       'usage_analytics.model_top_cost_share',
       'usage_analytics.model_lowest_success',
       'usage_analytics.model_long_tail_share',
+      'usage_analytics.model_average_output_tps',
       'usage_analytics.metric_estimated_cost',
     ]);
     expect(cards[0].value).toBe('3');
+    expect(cards[4].value).toBe('-');
     expect(cards[1]).toMatchObject({ meta: 'gpt-5.5', tone: 'warn', value: '90.0%' });
     // glm-5 has zero requests, so the lowest-success slot falls to gpt-5.4-mini.
     expect(cards[2]).toMatchObject({ meta: 'gpt-5.4-mini', tone: 'bad', value: '71.0%' });
@@ -288,6 +291,43 @@ describe('usageAnalyticsPresentation', () => {
     });
     expect(singleCostedCards[1].tone).toBeUndefined();
     expect(singleCostedCards[1].value).toBe('100.0%');
+
+    const throughputCards = buildUsageModelSummaryCards({
+      locale: 'en',
+      modelRows: [
+        modelRow({
+          id: 'a',
+          label: 'a',
+          throughputOutputTokens: 3_000,
+          throughputLatencyMs: 20_000,
+        }),
+        modelRow({
+          id: 'b',
+          label: 'b',
+          throughputOutputTokens: 1_000,
+          throughputLatencyMs: 20_000,
+        }),
+      ],
+      summary,
+      t,
+    });
+    const throughputCard = throughputCards.find(
+      (card) => card.label === 'usage_analytics.model_average_output_tps'
+    );
+    expect(throughputCard?.value).toBe('100');
+  });
+
+  it('formats output tokens per second', () => {
+    expect(formatUsageTokensPerSecond(null, 'en')).toBe('-');
+    expect(formatUsageTokensPerSecond(0, 'en')).toBe('-');
+    expect(formatUsageTokensPerSecond(0.456, 'en')).toBe('0.46');
+    expect(formatUsageTokensPerSecond(7.25, 'en')).toBe('7.3');
+    expect(formatUsageTokensPerSecond(1234.4, 'en')).toBe('1,234');
+    expect(formatUsageTokensPerSecond(7.25, 'de')).toBe('7,3');
+    expect(formatUsageTokensPerSecond(12.4, 'not a locale')).toBe('12');
+    expect(formatUsageTokensPerSecond(Number.NaN, 'en')).toBe('-');
+    expect(formatUsageTokensPerSecond(Number.POSITIVE_INFINITY, 'en')).toBe('-');
+    expect(formatUsageTokensPerSecond(-5, 'en')).toBe('-');
   });
 
   it('builds API key summary cards from key-dimension stats', () => {

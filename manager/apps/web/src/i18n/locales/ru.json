@@ -4739,6 +4739,9 @@
     "api_key_lowest_success": "Клиентский ключ с минимальной успешностью",
     "model_long_tail_share": "Доля длинного хвоста",
     "model_long_tail_meta": "Сумма моделей с долей затрат <8%",
+    "model_average_output_tps": "Средн. TPS вывода",
+    "model_average_output_tps_meta": "Выходные токены ÷ время запроса, успешные запросы",
+    "col_average_output_tps": "Средн. TPS",
     "model_caller_distribution": "Распределение по клиентским ключам",
     "rank_show_all": "Показать все ({{count}})",
     "rank_collapse": "Свернуть",
@@ -5397,7 +5400,7 @@
       "pro": "Pro",
       "max": "Max",
       "max_5x": "Max 5x",
-      "max_20x": "Max 20x",
+      "max_20x": "Ultra",
       "team": "Team"
     },
     "antigravity": {

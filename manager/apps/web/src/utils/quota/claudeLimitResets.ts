@@ -188,6 +188,17 @@ export const fetchClaudeLimitResets = async (
   return pending;
 };
 
+/** Resets usable now; null when the account is ineligible or has no grants. */
+export const countAvailableClaudeLimitResets = (
+  resets: ClaudeLimitResets,
+  nowMs: number
+): number | null =>
+  resets.eligible && resets.grants.length > 0
+    ? resets.grants
+        .filter((grant) => isClaudeLimitResetGrantAvailable(grant, nowMs))
+        .reduce((sum, grant) => sum + grant.resetsLeft, 0)
+    : null;
+
 /** Last known resets for a credential, without a request; keeps the card stable while quota reloads. */
 export const peekClaudeLimitResets = (
   authIndex: string,

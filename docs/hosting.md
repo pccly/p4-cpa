@@ -268,13 +268,17 @@ one real request after connecting your own account.
 BACKUP_DIR="$HOME/Backups/p4-cpa" BACKUP_KEEP=14 ./scripts/backup.sh
 ```
 
-The backup script stops only currently running services in this Compose project,
-archives `.env`, `config.yaml`, `auths/`, `data/` and `plugins/`, then restarts only
-those services and waits for health. Expect a brief outage. It serializes with
-startup and upgrade in this checkout. Avoid manual Docker operations during it,
-and never run a second checkout against these same data directories.
+The backup script stops only the running services that own data (the proxy and the
+manager); `https` keeps serving, so P4 Code and other routes on the shared port stay
+up. While they are stopped it snapshots `.env`, `config.yaml`, `auths/`, `data/` and
+`plugins/` into a staging directory next to the archives, using instant APFS clones
+on macOS (a plain copy elsewhere, or when the backup directory is on another volume).
+It then restarts those services, waits for health, and compresses the snapshot while
+they serve. Expect an outage of a few seconds for the proxy and manager. It
+serializes with startup and upgrade in this checkout. Avoid manual Docker operations
+during it, and never run a second checkout against these same data directories.
 
-SQLite and its WAL/SHM files are copied while containers are stopped. The complete
+SQLite and its WAL/SHM files are snapshotted while their containers are stopped. The complete
 `data/` directory includes **`data.key`**, which must travel with the database.
 Each archive records its source commit in `p4-cpa-backup.json`.
 Archives have permission 0600, are outside the repository, and contain live secrets.

@@ -377,6 +377,7 @@ import {
   getCredentialScopedQuotaState,
   getQuotaCredentialStoreKey,
 } from '@/utils/quota/credentialScope';
+import { countAvailableClaudeLimitResets } from '@/utils/quota/claudeLimitResets';
 import {
   buildProviderCredentialTaskPlan,
   runProviderCredentialTaskPlan,
@@ -9009,12 +9010,17 @@ export function AccountsPage() {
       row.provider === CODEX_CONFIG.type
         ? getDisplayCodexResetEvidenceQuota(row)
         : undefined;
-    const codexResetCreditsCount =
-      codexQuotaState?.rateLimitResetCreditsAvailableCount ??
-      codexQuotaState?.rateLimitResetCredits?.length ??
-      null;
+    const claudeLimitResets =
+      row.provider === CLAUDE_CONFIG.type
+        ? getCredentialScopedQuotaState(claudeQuota, row.raw)?.limitResets
+        : undefined;
+    const codexResetCreditsCount = claudeLimitResets
+      ? countAvailableClaudeLimitResets(claudeLimitResets, Date.now())
+      : (codexQuotaState?.rateLimitResetCreditsAvailableCount ??
+        codexQuotaState?.rateLimitResetCredits?.length ??
+        null);
     const hasCodexResetCredits =
-      row.provider === CODEX_CONFIG.type &&
+      (row.provider === CODEX_CONFIG.type || row.provider === CLAUDE_CONFIG.type) &&
       codexResetCreditsCount !== null &&
       codexResetCreditsCount > 0;
     const providerIcon = getAuthFileIcon(row.provider, resolvedTheme);

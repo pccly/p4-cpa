@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -163,6 +164,41 @@ class BackupRecoveryTests(unittest.TestCase):
                     auto_deploy.ops.backup(on_created=archives.append)
             self.assertEqual(len(archives), 1)
             self.assertTrue(archives[0].is_file())
+
+    def test_backup_keeps_front_end_running_and_archives_after_restart(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'repo'
+            root.mkdir()
+            for name in ['auths', 'data', 'plugins']:
+                (root / name).mkdir()
+            for name in ['.env', 'config.yaml', 'data/data.key', 'data/usage.sqlite']:
+                (root / name).write_text('fixture')
+            calls = []
+
+            def compose(*args, **kwargs):
+                calls.append(args)
+                if args[0] == 'ps': return 'cli-proxy-api\ncpa-manager-plus\nhttps'
+                return ''
+
+            backups = Path(directory) / 'backups'
+            (backups / '.p4-cpa-staging-20260101T000000Z-deadbeef' / 'data').mkdir(parents=True)
+            with patch.object(auto_deploy.ops, 'ROOT', root), \
+                 patch.object(auto_deploy.ops, 'compose', compose), \
+                 patch.object(auto_deploy.ops, 'run', return_value='a' * 40), \
+                 patch.dict(auto_deploy.os.environ, {'BACKUP_DIR': str(backups), 'BACKUP_KEEP': '0'}):
+                archive = auto_deploy.ops.backup()
+
+            stop = next(call for call in calls if call[0] == 'stop')
+            start = next(call for call in calls if call[0] == 'start')
+            self.assertNotIn('https', stop)
+            self.assertEqual([s for s in stop if not s.startswith('-') and not s.isdigit()][1:],
+                             ['cli-proxy-api', 'cpa-manager-plus'])
+            self.assertEqual(start[-3:], ('cli-proxy-api', 'cpa-manager-plus', 'https'))
+            self.assertLess(calls.index(stop), calls.index(start))
+            self.assertTrue(archive.is_file())
+            with tarfile.open(archive) as tar:
+                self.assertIn('data/usage.sqlite', tar.getnames())
+            self.assertEqual([p.name for p in backups.iterdir() if p.name.startswith('.p4-cpa-staging')], [])
 
 
 if __name__ == '__main__':

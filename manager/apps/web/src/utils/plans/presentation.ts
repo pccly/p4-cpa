@@ -80,7 +80,7 @@ const CANONICAL_PLAN_FILTER_LABELS: Readonly<
   edu_plus: { key: 'plans.codex.edu_plus.short', fallback: 'Edu Plus' },
   edu_pro: { key: 'plans.codex.edu_pro.short', fallback: 'Edu Pro' },
   max: { key: 'plans.claude.max', fallback: 'Max' },
-  max_5x: { key: 'plans.claude.max_5x', fallback: 'Max 5x' },
+  max_5x: { key: 'plans.claude.max_5x', fallback: 'Max' },
   max_20x: { key: 'plans.claude.max_20x', fallback: 'Ultra' },
   ultra: { key: 'plans.antigravity.ultra', fallback: 'Ultra' },
   'ultra-lite': { key: 'plans.antigravity.ultra_lite', fallback: 'Ultra Lite' },

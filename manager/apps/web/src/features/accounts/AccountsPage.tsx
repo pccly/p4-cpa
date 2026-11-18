@@ -6801,6 +6801,21 @@ export function AccountsPage() {
     [accountDisplayMode, connectionFingerprint, refreshQuotaForRow, showNotification, t]
   );
 
+  // Claude quota saved before limit resets and Ultra detection existed lacks
+  // `limitResets`; refresh those rows once through the guarded batch path.
+  const staleClaudeQuotaRefreshAttemptedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const staleRows = rows.filter((row) => {
+      if (row.provider !== CLAUDE_CONFIG.type || row.runtimeOnly) return false;
+      if (staleClaudeQuotaRefreshAttemptedRef.current.has(row.selectionKey)) return false;
+      const state = getCredentialScopedQuotaState(claudeQuota, row.raw);
+      return state?.status === 'success' && !('limitResets' in state);
+    });
+    if (staleRows.length === 0 || quotaRefreshBatchRef.current) return;
+    staleRows.forEach((row) => staleClaudeQuotaRefreshAttemptedRef.current.add(row.selectionKey));
+    void refreshQuotaRows(staleRows);
+  }, [claudeQuota, refreshQuotaRows, rows]);
+
   const refreshAccountQuota = useCallback(
     async (row: AccountRow, mode: AccountQuotaRefreshMode = 'summary'): Promise<void> => {
       if (row.runtimeOnly || !isQuotaRefreshSupportedProvider(row.provider)) return;

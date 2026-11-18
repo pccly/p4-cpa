@@ -1060,6 +1060,38 @@ describe('fetchClaudeQuota', () => {
     expect(result.limitResets).toBeNull();
   });
 
+  it.each([
+    ['default_claude_max_20x', 'plan_max20'],
+    ['default_claude_ultra', 'plan_max20'],
+    ['default_claude_max_5x', 'plan_max'],
+    [undefined, 'plan_max'],
+  ])('maps Claude Max rate-limit tier %s to %s', async (tier, expected) => {
+    mocks.request
+      .mockResolvedValueOnce({
+        statusCode: 200,
+        hasStatusCode: true,
+        header: {},
+        bodyText: '',
+        body: { five_hour: { utilization: 1, resets_at: '2026-07-01T10:00:00Z' } },
+      })
+      .mockResolvedValueOnce({
+        statusCode: 200,
+        hasStatusCode: true,
+        header: {},
+        bodyText: '',
+        body: {
+          account: { has_claude_max: true, has_claude_pro: false },
+          organization: tier ? { rate_limit_tier: tier } : {},
+        },
+      });
+
+    const result = await fetchClaudeQuota(
+      { name: 'claude-tier.json', type: 'claude', authIndex: 'claude-tier' },
+      t
+    );
+    expect(result.planType).toBe(expected);
+  });
+
   it('preserves usage windows and marks rateLimited when profile returns 429', async () => {
     mocks.request
       .mockResolvedValueOnce({

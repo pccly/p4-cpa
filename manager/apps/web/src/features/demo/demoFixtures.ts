@@ -7653,6 +7653,40 @@ export const getDemoApiCallResult = (payload: DemoApiCallPayload = {}) => {
         : authIndex === 'claude-research-02'
           ? { account: { has_claude_pro: true } }
           : { email: 'research@example.com', organization_name: 'Research Team' };
+  } else if (
+    requestUrl.includes('anthropic.com/api/oauth/usage') &&
+    requestUrl.includes('cedar_ember=1')
+  ) {
+    body = {
+      cedar_ember: {
+        eligible: true,
+        grants: [
+          {
+            id: 'demo-claude-weekly',
+            label: 'Weekly reset',
+            type: 'weekly',
+            resets_total: 1,
+            resets_left: 1,
+            starts_at: new Date(now() - 2 * day).toISOString(),
+            ends_at: new Date(now() + 5 * day).toISOString(),
+            paused: false,
+            usable_now: true,
+          },
+          {
+            id: 'demo-claude-full',
+            label: 'One full limit reset',
+            type: 'full',
+            resets_total: 1,
+            resets_left: 1,
+            starts_at: new Date(now() - 8 * day).toISOString(),
+            ends_at: new Date(now() + 22 * day).toISOString(),
+            paused: false,
+            usable_now: true,
+          },
+        ],
+        next_grant_id: 'demo-claude-weekly',
+      },
+    };
   } else if (requestUrl.includes('anthropic.com/api/oauth/usage')) {
     const fiveHour = {
       utilization: authIndex === 'claude-team-01' ? 44 : 18,

@@ -2334,6 +2334,7 @@
     "empty_data": "暂无订阅数据"
   },
   "claude_quota": {
+    "limit_resets_subtitle": "Claude 免费限额重置 · 请在 claude.ai 使用",
     "title": "Claude 额度",
     "empty_title": "暂无 Claude OAuth 认证",
     "empty_desc": "使用 Claude OAuth 登录后即可查看额度。",

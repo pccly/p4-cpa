@@ -118,6 +118,64 @@ describe('AccountQuotaTab timer crossing expiry', () => {
     ).toBeTruthy();
   });
 
+  it('shows Claude limit resets with grant labels and no spend button', () => {
+    const detailView = {
+      ...makeDetailView(baseNow + 3 * 86_400_000, 3),
+      identity: {
+        rowKey: 'claude.json\u0000auth-2',
+        name: 'claude.json',
+        provider: 'claude',
+        type: 'claude',
+        authIndex: 'auth-2',
+        account: 'test@example.com',
+      },
+    } as unknown as AccountDetailViewModel;
+    detailView.quota.resetCreditExpiries = [
+      { id: 'weekly', expiresAtMs: baseNow + 86_400_000, label: 'Weekly reset', count: 2 },
+      { id: 'full', expiresAtMs: baseNow + 3 * 86_400_000, label: 'One full limit reset' },
+    ];
+
+    let renderer!: ReactTestRenderer;
+    act(() => {
+      renderer = create(
+        <AccountQuotaTab
+          detailView={detailView}
+          windowUsageError=""
+          historyAvailable={false}
+          historyRefreshing={false}
+          onRefreshHistory={vi.fn()}
+          onResetQuota={vi.fn()}
+          resetQuotaDisabled={false}
+        />
+      );
+    });
+
+    expect(
+      renderer.root.findAllByProps({ 'data-account-quota-reset-records': 'true' })
+    ).toHaveLength(1);
+    expect(renderer.root.findAllByProps({ 'data-quota-reset-action': 'true' })).toHaveLength(0);
+    const text = JSON.stringify(renderer.toJSON());
+    expect(text).toContain('claude_quota.limit_resets_subtitle');
+    expect(text).toContain('Weekly reset');
+    expect(text).toContain(' ×2');
+    expect(text).toContain('One full limit reset');
+    expect(
+      renderer.root.findAllByProps({ 'data-quota-reset-credit-expiry': 'full' })
+    ).toHaveLength(1);
+    const countText = () =>
+      renderer.root.findByProps({ 'data-quota-reset-count': 'true' }).findByType('strong')
+        .children[0];
+    expect(countText()).toBe('3');
+
+    act(() => {
+      vi.advanceTimersByTime(86_400_000 + 60_000);
+    });
+    expect(countText()).toBe('1');
+    expect(
+      renderer.root.findAllByProps({ 'data-quota-reset-credit-expiry': 'weekly' })
+    ).toHaveLength(0);
+  });
+
   it('shows the initial no-quota state without inventing values from another account', () => {
     const detailView = makeDetailView(0, null);
     detailView.quota.resetCreditExpiries = [];

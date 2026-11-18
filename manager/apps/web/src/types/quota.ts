@@ -341,12 +341,32 @@ export interface CredentialScopedQuotaState {
   failedAtMs?: number;
 }
 
+export interface ClaudeLimitResetGrant {
+  id: string;
+  label: string;
+  type: 'session' | 'weekly' | 'full' | null;
+  resetsLeft: number;
+  resetsTotal: number;
+  startsAtMs: number | null;
+  endsAtMs: number | null;
+  paused: boolean;
+  available: boolean;
+}
+
+export interface ClaudeLimitResets {
+  eligible: boolean;
+  ineligibleReason: string | null;
+  available: number;
+  grants: ClaudeLimitResetGrant[];
+}
+
 export interface ClaudeQuotaState extends CredentialScopedQuotaState {
   status: 'idle' | 'loading' | 'success' | 'error';
   windows: ClaudeQuotaWindow[];
   quotaInventoryObserved?: boolean;
   extraUsage?: ClaudeExtraUsage | null;
   planType?: string | null;
+  limitResets?: ClaudeLimitResets | null;
   error?: string;
   errorStatus?: number;
 }

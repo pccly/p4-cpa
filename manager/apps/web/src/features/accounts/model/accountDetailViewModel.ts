@@ -1,5 +1,11 @@
 import type { TFunction } from 'i18next';
-import type { CodexQuotaState, QuotaResetAccuracy, XaiQuotaState } from '@/types';
+import type {
+  ClaudeQuotaState,
+  CodexQuotaState,
+  QuotaResetAccuracy,
+  XaiQuotaState,
+} from '@/types';
+import { isClaudeLimitResetGrantAvailable } from '@/utils/quota/claudeLimitResets';
 import { getSortedCodexResetCreditExpiries } from '@/components/quota/quotaConfigs';
 import type {
   AccountActionCandidate,
@@ -141,6 +147,8 @@ export interface AccountDetailQuotaWindow extends Omit<
 export interface AccountDetailResetCreditExpiry {
   id: string;
   expiresAtMs: number;
+  label?: string;
+  count?: number;
 }
 
 export interface AccountDetailActionCandidateSummary {
@@ -322,6 +330,7 @@ export interface AccountDetailViewModel {
     windows: AccountDetailQuotaWindow[];
     cooldown: QuotaCooldownInfo | null;
     resetCreditsAvailableCount: number | null;
+    resetCreditsOpenEndedCount?: number;
     resetCreditExpiries: AccountDetailResetCreditExpiry[];
   };
   auth: {
@@ -341,6 +350,45 @@ export interface AccountDetailViewModel {
   history: AccountDetailHistorySummary | null;
 }
 
+const buildResetCreditSummary = (
+  options: Pick<BuildAccountDetailViewModelOptions, 'codexQuota' | 'claudeQuota'>,
+  nowMs: number = Date.now()
+): {
+  resetCreditsAvailableCount: number | null;
+  resetCreditsOpenEndedCount?: number;
+  resetCreditExpiries: AccountDetailResetCreditExpiry[];
+} => {
+  const claudeResets = options.claudeQuota?.limitResets;
+  if (claudeResets) {
+    if (!claudeResets.eligible || claudeResets.grants.length === 0) {
+      return { resetCreditsAvailableCount: null, resetCreditExpiries: [] };
+    }
+    const available = claudeResets.grants.filter((grant) =>
+      isClaudeLimitResetGrantAvailable(grant, nowMs)
+    );
+    return {
+      resetCreditsAvailableCount: available.reduce((sum, grant) => sum + grant.resetsLeft, 0),
+      resetCreditsOpenEndedCount: available
+        .filter((grant) => grant.endsAtMs === null)
+        .reduce((sum, grant) => sum + grant.resetsLeft, 0),
+      resetCreditExpiries: available
+        .filter((grant) => grant.endsAtMs !== null)
+        .map((grant) => ({
+          id: grant.id,
+          expiresAtMs: grant.endsAtMs as number,
+          label: grant.label || undefined,
+          count: grant.resetsLeft,
+        })),
+    };
+  }
+  return {
+    resetCreditsAvailableCount: options.codexQuota?.rateLimitResetCreditsAvailableCount ?? null,
+    resetCreditExpiries: getSortedCodexResetCreditExpiries(
+      options.codexQuota?.rateLimitResetCredits
+    ).map((item) => ({ id: item.id, expiresAtMs: item.expiresAtMs })),
+  };
+};
+
 export interface BuildAccountDetailViewModelOptions {
   t?: TFunction;
   recommendation?: AccountRecommendation | null;
@@ -353,6 +401,7 @@ export interface BuildAccountDetailViewModelOptions {
   history?: MonitoringAccountHistoryItem | null;
   valueRow?: UsageValueRow | null;
   codexQuota?: CodexQuotaState | null;
+  claudeQuota?: ClaudeQuotaState | null;
   xaiQuota?: XaiQuotaState | null;
   diagnosticsSummary?: MonitoringAnalyticsSummary | null;
   diagnosticsRecentFailure?: MonitoringAnalyticsRecentFailure | null;
@@ -1531,10 +1580,7 @@ export const buildAccountDetailViewModel = (
       diagnostics: buildQuotaDiagnostics(row, options.xaiQuota),
       windows: buildQuotaWindows(row, quotaWindows, options.windowUsageByKey ?? new Map()),
       cooldown: quotaCooldown,
-      resetCreditsAvailableCount: options.codexQuota?.rateLimitResetCreditsAvailableCount ?? null,
-      resetCreditExpiries: getSortedCodexResetCreditExpiries(
-        options.codexQuota?.rateLimitResetCredits
-      ).map((item) => ({ id: item.id, expiresAtMs: item.expiresAtMs })),
+      ...buildResetCreditSummary(options),
     },
     auth: {
       fields: buildAuthFields(row),

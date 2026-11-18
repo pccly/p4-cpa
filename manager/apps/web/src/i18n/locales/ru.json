@@ -2339,6 +2339,7 @@
     "empty_data": "Данные подписки отсутствуют"
   },
   "claude_quota": {
+    "limit_resets_subtitle": "Бесплатные сбросы лимитов Claude · используйте их на claude.ai",
     "title": "Квота Claude",
     "empty_title": "Файлы авторизации Claude OAuth отсутствуют",
     "empty_desc": "Войдите через Claude OAuth, чтобы увидеть квоту.",

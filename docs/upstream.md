@@ -94,6 +94,24 @@ is the latency-weighted mean of the per-request TPS shown in realtime monitoring
 The manager computes it from retained raw usage events only when the Models tab
 requests `model_throughput`.
 
+## P4 CPA 1.0.4 integration
+
+Version **1.0.4** keeps CLIProxyAPI at **v8.0.77**, which is still its latest release.
+From CPA Manager Plus `main` after **v1.14.10** it takes two security fixes:
+Go **1.26.11** for GO-2026-6859, a `net/http` standard-library vulnerability, and the
+npm audit dependency overrides. The proxy builder moves to Go 1.26.11 as well,
+because the same standard library is compiled into it. The other unreleased
+upstream manager commits only change docs, sponsor links and the docs site.
+
+P4 CPA 1.0.4 shows Claude limit resets in the account Quota tab. Anthropic documents
+the feature, but not its API. The manager reads the `cedar_ember` block from
+`/api/oauth/usage?cedar_ember=1&skip_spend=1`, the request Claude Code sends. It counts
+a grant only when it has resets left, is not paused, and is inside its start and end
+window. Because the endpoint is rate limited harder than plain usage, the manager
+fetches it in a separate request at most once an hour per credential, backs off on
+429 and errors, and never lets it affect the quota windows. Resets are redeemed on
+claude.ai; the manager does not spend them.
+
 ## Independent releases
 
 P4 CPA no longer displays upstream release links, latest-version badges, or update

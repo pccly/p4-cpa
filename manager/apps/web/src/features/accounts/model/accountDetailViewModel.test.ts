@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import type { AuthFileItem, CodexQuotaState, XaiQuotaState } from '@/types';
+import { describe, expect, it, vi } from 'vitest';
+import type {
+  AuthFileItem,
+  ClaudeLimitResetGrant,
+  ClaudeQuotaState,
+  CodexQuotaState,
+  XaiQuotaState,
+} from '@/types';
 import type {
   AccountActionCandidate,
   MonitoringAnalyticsEventRow,
@@ -1945,6 +1951,80 @@ describe('accountDetailViewModel', () => {
     expect(viewModel.health.status).not.toBe('weekly_exhausted');
     expect(viewModel.health.status).not.toBe('limited');
     expect(viewModel.strategy.recommendation).toBeNull();
+  });
+
+  it('maps Claude limit-reset grants into reset records', () => {
+    const row = makeRow({
+      key: 'claude.json',
+      selectionKey: 'claude.json\u00001',
+      fileName: 'claude.json',
+      raw: {
+        name: 'claude.json',
+        type: 'claude',
+        provider: 'claude',
+        authIndex: '1',
+      } as AuthFileItem,
+    });
+    const grant = (id: string, overrides: Partial<ClaudeLimitResetGrant> = {}) => ({
+      id,
+      label: id,
+      type: 'full' as const,
+      resetsLeft: 1,
+      resetsTotal: 1,
+      startsAtMs: null,
+      endsAtMs: 2_000,
+      paused: false,
+      available: true,
+      ...overrides,
+    });
+    const claudeQuota: ClaudeQuotaState = {
+      status: 'success',
+      windows: [],
+      limitResets: {
+        eligible: true,
+        ineligibleReason: null,
+        available: 3,
+        grants: [
+          grant('weekly', { resetsLeft: 2, endsAtMs: 1_000, label: 'Weekly reset' }),
+          grant('used', { resetsLeft: 0, available: false }),
+          grant('open-ended', { endsAtMs: null }),
+          grant('full', { label: '' }),
+        ],
+      },
+    };
+
+    vi.useFakeTimers({ now: 500 });
+    try {
+      const viewModel = buildAccountDetailViewModel(row, { claudeQuota });
+      expect(viewModel.quota.resetCreditsAvailableCount).toBe(4);
+      expect(viewModel.quota.resetCreditExpiries).toEqual([
+        { id: 'weekly', expiresAtMs: 1_000, label: 'Weekly reset', count: 2 },
+        { id: 'full', expiresAtMs: 2_000, label: undefined, count: 1 },
+      ]);
+
+      vi.setSystemTime(1_500);
+      const later = buildAccountDetailViewModel(row, { claudeQuota });
+      expect(later.quota.resetCreditsAvailableCount).toBe(2);
+      expect(later.quota.resetCreditExpiries.map((item) => item.id)).toEqual(['full']);
+    } finally {
+      vi.useRealTimers();
+    }
+
+    for (const limitResets of [
+      { eligible: false, ineligibleReason: 'surface', available: 0, grants: [grant('full')] },
+      { eligible: true, ineligibleReason: null, available: 0, grants: [] },
+    ]) {
+      const hidden = buildAccountDetailViewModel(row, {
+        claudeQuota: { ...claudeQuota, limitResets },
+      });
+      expect(hidden.quota.resetCreditsAvailableCount).toBeNull();
+      expect(hidden.quota.resetCreditExpiries).toEqual([]);
+    }
+
+    const unknown = buildAccountDetailViewModel(row, {
+      claudeQuota: { ...claudeQuota, limitResets: null },
+    });
+    expect(unknown.quota.resetCreditsAvailableCount).toBeNull();
   });
 
   it('keeps raw secrets and candidate evidence out of the drawer contract', () => {
